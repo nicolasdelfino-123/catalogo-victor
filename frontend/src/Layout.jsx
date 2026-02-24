@@ -3,10 +3,11 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import injectContext, { Context } from "./js/store/appContext.jsx";
 import { setWholesaleMode } from "./utils/wholesaleMode.js";
 
-
+//imports nuevos componentes
+import ProductDetailNuevo from "./components/ui/product/ProductDetailNuevo.jsx";
+import Inicio from "./views/InicioNuevo.jsx";
 
 // Vistas
-import Inicio from "./views/InicioNuevo.jsx";
 import ProductDetail from "./views/ProductDetail.jsx";
 import Login from "./views/Login.jsx";
 import Register from "./views/Register.jsx";
@@ -155,7 +156,8 @@ const Layout = () => {
 
           {/* Productos */}
           <Route path="/products" element={<ProductGrid />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/product/:id" element={<ProductDetailNuevo />} />
+          <Route path="/mayorista/product/:id" element={<ProductDetailNuevo />} />
           <Route path="/categoria/:slug" element={<ProductGrid />} />
 
           {/* 🔥 RUTA BASE MAYORISTA (CLAVE) */}
@@ -168,7 +170,7 @@ const Layout = () => {
           {/* Mayorista productos */}
           <Route path="/mayorista/products" element={<ProductGrid />} />
 
-          <Route path="/mayorista/product/:id" element={<ProductDetail />} />
+
 
           <Route path="/mayorista/categoria/:slug" element={<ProductGrid key="mayorista" />} />
 

@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import injectContext, { Context } from "./js/store/appContext.jsx";
 import { setWholesaleMode } from "./utils/wholesaleMode.js";
 
+
+
 // Vistas
 import Inicio from "./views/InicioNuevo.jsx";
 import ProductDetail from "./views/ProductDetail.jsx";

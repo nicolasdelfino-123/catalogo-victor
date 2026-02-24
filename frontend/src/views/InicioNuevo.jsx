@@ -1,6 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { Context } from "../js/store/appContext.jsx";
-import ProductCard from "../components/ProductCard.jsx";
+import ProductCardPerfumes from "../components/ui/cards/ProductCardPerfumes.jsx";
 import HomeContact from "../components/home/HomeContact.jsx";
 
 export default function InicioNuevo() {
@@ -36,7 +36,7 @@ export default function InicioNuevo() {
             </section>
 
             {/* PRODUCTOS */}
-            <section className="max-w-7xl mx-auto px-4 py-12">
+            <section className="max-w-7xl mx-auto px-2 sm:px-4 py-12">
                 <h2 className="text-2xl font-bold text-center mb-8">
                     Productos destacados
                 </h2>
@@ -44,9 +44,9 @@ export default function InicioNuevo() {
                 {store.loading ? (
                     <p className="text-center">Cargando...</p>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-0 md:gap-6">
                         {(store.products || []).slice(0, 12).map(product => (
-                            <ProductCard key={product.id} product={product} />
+                            <ProductCardPerfumes key={product.id} product={product} />
                         ))}
                     </div>
                 )}

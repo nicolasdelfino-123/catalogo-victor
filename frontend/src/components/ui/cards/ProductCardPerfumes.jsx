@@ -20,7 +20,7 @@ const toAbsUrl = (u = "") => {
     return `${API}/${u}`;
 };
 
-export default function ProductCardPerfumes({ product }) {
+export default function ProductCardPerfumes({ product, returnTo, isGrid = true }) {
 
     const [quantity, setQuantity] = useState(1);
     const [selectedFlavor, setSelectedFlavor] = useState("");
@@ -49,7 +49,11 @@ export default function ProductCardPerfumes({ product }) {
             product.flavors.length > 0;
 
         if (hasFlavors && !selectedFlavor) {
-            navigate(`${prefix}/product/${product.id}`);
+            sessionStorage.setItem("lastProductId", String(product.id));
+
+            const state = returnTo ? { fromGrid: true, returnTo } : undefined;
+            navigate(`${prefix}/product/${product.id}`, { state });
+
             return;
         }
 
@@ -59,10 +63,21 @@ export default function ProductCardPerfumes({ product }) {
         );
     };
 
-    const handleProductClick = () => {
-        navigate(`${prefix}/product/${product.id}`);
-    };
 
+    /*  const handleProductClick = () => {
+         sessionStorage.setItem("lastProductId", String(product.id));
+         navigate(`${prefix}/product/${product.id}`);
+     }; */
+
+    const handleProductClick = () => {
+        // ancla para restauración exacta
+        sessionStorage.setItem("lastProductId", String(product.id));
+
+        // guardo returnTo y marco si viene del grid según el prop `isGrid`
+        const state = returnTo ? { fromGrid: Boolean(isGrid), returnTo } : undefined;
+
+        navigate(`${prefix}/product/${product.id}`, { state });
+    };
     return (
         <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col h-full">
 

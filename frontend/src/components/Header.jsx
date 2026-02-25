@@ -3,8 +3,8 @@ import { Context } from "../js/store/appContext.jsx";
 import Cart from "../components/Cart.jsx";
 import AccountDropdown from "../components/AccountDropdown.jsx";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import logo from '@/assets/logo.png'
-import logo22 from '@/assets/logo-22.png'
+/* import logo from '@/assets/logo.png'
+import logo22 from '@/assets/logo-22.png' */
 import zarpados from '@/assets/zarpados-22.png'
 import { withWholesale } from "../utils/navigation.js";
 
@@ -195,7 +195,7 @@ export default function Header() {
           </div>
 
           {/* Logo */}
-          <div className="flex-shrink-0 md:mr-auto">
+          {/*   <div className="flex-shrink-0 md:mr-auto">
             <Link to={withWholesale("/inicio")}
               aria-label="Ir al inicio" className="block">
               <img
@@ -219,7 +219,7 @@ export default function Header() {
               />
 
             </Link>
-          </div>
+          </div> */}
 
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex space-x-8">

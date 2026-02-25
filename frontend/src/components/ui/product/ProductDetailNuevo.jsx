@@ -159,22 +159,34 @@ export default function ProductDetailNuevo() {
     };
 
     const handleBack = () => {
-        if (location.state?.fromCategory) {
-            navigate(`${prefix}/categoria/${location.state.fromCategory}`);
+
+        if (product?.id) {
+            sessionStorage.setItem("lastProductId", String(product.id));
+        }
+
+        // Si venimos desde un grid, preferimos retroceder en el historial
+        // para preservar filtros/página y permitir que el grid restaure
+        // la posición exacta mediante la ancla `lastProductId`.
+        if (location.state?.fromGrid) {
+            // Si hay historial, volvemos atrás; si no, usamos returnTo si existe.
+            if (window.history.length > 1) {
+                navigate(-1);
+                return;
+            }
+            if (location.state?.returnTo) {
+                navigate(location.state.returnTo);
+                return;
+            }
+        }
+
+        // Si no venimos del grid, usamos returnTo si se proporcionó, sino /products
+        if (location.state?.returnTo) {
+            navigate(location.state.returnTo);
             return;
         }
 
-        const slug = NAME_TO_SLUG[product?.category_name?.trim()];
-        if (slug) {
-            navigate(`${prefix}/categoria/${slug}`);
-            return;
-        }
-
-        navigate(`${prefix}/products`);
+        navigate("/products");
     };
-
-    if (!product) return null;
-
     /* =========================
        UI
     ========================= */

@@ -1,10 +1,12 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useLayoutEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Context } from "../js/store/appContext.jsx";
 import ProductCardPerfumes from "../components/ui/cards/ProductCardPerfumes.jsx";
 import HomeContact from "../components/home/HomeContact.jsx";
 
 export default function InicioNuevo() {
     const { store, actions } = useContext(Context);
+    const location = useLocation();
 
     useEffect(() => {
         if (actions?.fetchProducts) {
@@ -22,6 +24,19 @@ export default function InicioNuevo() {
     const MAP_EMBED =
         "https://www.google.com/maps?q=-31.8704952,-62.7228966&z=17&hl=es&output=embed";
 
+
+    useLayoutEffect(() => {
+        const lastId = sessionStorage.getItem("lastProductId");
+        if (!lastId) return;
+
+        const el = document.querySelector(`[data-product-id="${lastId}"]`);
+        if (!el) return;
+
+        el.scrollIntoView({ block: "center" });
+
+        // opcional: limpiar para que no te re-scrollee en futuras entradas
+        sessionStorage.removeItem("lastProductId");
+    }, []);
     return (
         <div className="min-h-screen bg-gray-50">
 
@@ -45,8 +60,10 @@ export default function InicioNuevo() {
                     <p className="text-center">Cargando...</p>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-0 gap-y-2 md:gap-6">
-                        {(store.products || []).slice(0, 12).map(product => (
-                            <ProductCardPerfumes key={product.id} product={product} />
+                        {(store.products || []).slice(0, 12).map((product) => (
+                            <div key={product.id} data-product-id={product.id}>
+                                <ProductCardPerfumes product={product} returnTo={location.pathname} isGrid={false} />
+                            </div>
                         ))}
                     </div>
                 )}

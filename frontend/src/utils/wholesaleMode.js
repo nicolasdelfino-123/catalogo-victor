@@ -5,3 +5,8 @@ export const setWholesaleMode = (value) => {
 };
 
 export const isWholesaleMode = () => wholesale;
+
+// ✅ AGREGA ESTO
+export const withWholesale = (path) => {
+    return wholesale ? `/mayorista${path}` : path;
+};

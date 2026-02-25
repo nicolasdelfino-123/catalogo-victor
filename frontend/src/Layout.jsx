@@ -5,7 +5,9 @@ import { setWholesaleMode } from "./utils/wholesaleMode.js";
 
 //imports nuevos componentes
 import ProductDetailNuevo from "./components/ui/product/ProductDetailNuevo.jsx";
-import Inicio from "./views/InicioNuevo.jsx";
+
+import ProductGridNuevo from "./components/ui/product/ProductGridNuevo.jsx";
+import InicioNuevo from "./views/InicioNuevo.jsx";
 
 // Vistas
 import ProductDetail from "./views/ProductDetail.jsx";
@@ -19,7 +21,7 @@ import ThankYou from "./views/ThankYou.jsx";
 
 // Componentes
 import Cart from "./components/Cart.jsx";
-import ProductGrid from "./components/ProductGrid.jsx";
+/* import ProductGrid from "./components/ProductGrid.jsx"; */
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import NewToast from "./components/NewToast.jsx";
@@ -56,7 +58,7 @@ import desechables from '@/assets/desechables.png';
 import perfumes from '@/assets/perfumes.png';
 import accesorios from '@/assets/accesorios.png';
 import liquidos from '@/assets/liquidos.png';
-import InicioNuevo from "./views/InicioNuevo.jsx";
+
 
 
 // ===============================
@@ -70,7 +72,7 @@ const InicioWithSpinner = ({ images }) => {
       <Spinner images={images} minDelay={800} onLoadComplete={() => setShowPage(true)} />
       <div className={showPage ? 'opacity-100' : 'opacity-0'}
         style={{ transition: 'opacity 3s ease-in-out' }}>
-        <Inicio />
+        <InicioNuevo />
       </div>
     </>
   );
@@ -155,10 +157,18 @@ const Layout = () => {
           <Route path="/inicio" element={<InicioNuevo />} />
 
           {/* Productos */}
-          <Route path="/products" element={<ProductGrid />} />
+          {/*        <Route path="/products" element={<ProductGrid />} /> */}
           <Route path="/product/:id" element={<ProductDetailNuevo />} />
           <Route path="/mayorista/product/:id" element={<ProductDetailNuevo />} />
-          <Route path="/categoria/:slug" element={<ProductGrid />} />
+
+
+          {/* Productos (NUEVO GRID) */}
+          <Route path="/products" element={<ProductGridNuevo />} />
+          <Route path="/categoria/:slug" element={<ProductGridNuevo />} />
+
+          {/* Mayorista productos (NUEVO GRID) */}
+          <Route path="/mayorista/products" element={<ProductGridNuevo />} />
+          <Route path="/mayorista/categoria/:slug" element={<ProductGridNuevo key="mayorista" />} />
 
           {/* 🔥 RUTA BASE MAYORISTA (CLAVE) */}
           {/* Mayorista landing */}
@@ -168,14 +178,14 @@ const Layout = () => {
           <Route path="/mayorista/inicio" element={<InicioWithSpinner images={inicioImages} />} />
 
           {/* Mayorista productos */}
-          <Route path="/mayorista/products" element={<ProductGrid />} />
+          {/*  <Route path="/mayorista/products" element={<ProductGrid />} /> */}
 
 
 
-          <Route path="/mayorista/categoria/:slug" element={<ProductGrid key="mayorista" />} />
+          {/*           <Route path="/mayorista/categoria/:slug" element={<ProductGrid key="mayorista" />} /> */}
 
-
-          <Route path="/categoria/:slug" element={<ProductGrid key="minorista" />} />
+          {/* 
+          <Route path="/categoria/:slug" element={<ProductGrid key="minorista" />} /> */}
 
 
 

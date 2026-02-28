@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import injectContext, { Context } from "./js/store/appContext.jsx";
 import { setWholesaleMode } from "./utils/wholesaleMode.js";
@@ -48,23 +48,14 @@ import Envios from "./views/Envios.jsx";
 import AvisoLegal from "./views/AvisoLegal.jsx";
 import ThankYouTransfer from "./components/ThankYouTransfer.jsx";
 
-// Spinner inicio
-import Spinner from "./components/Spinner.jsx";
-import heroBg from '@/assets/hero-bg.png';
-import banner1 from '@/assets/banner-1.png';
-import recargables from '@/assets/recargables.png';
-import celu from '@/assets/celu.png';
-import desechables from '@/assets/desechables.png';
-import perfumes from '@/assets/perfumes.png';
-import accesorios from '@/assets/accesorios.png';
-import liquidos from '@/assets/liquidos.png';
+// Spinner inicio (desactivado)
 
 
 
 // ===============================
 // Spinner con fade suave
 // ===============================
-const InicioWithSpinner = ({ images }) => {
+/* const InicioWithSpinner = ({ images }) => {
   const [showPage, setShowPage] = useState(false);
 
   return (
@@ -76,7 +67,7 @@ const InicioWithSpinner = ({ images }) => {
       </div>
     </>
   );
-};
+}; */
 
 
 // ===============================
@@ -106,10 +97,10 @@ const ModeWatcher = () => {
 const Layout = () => {
   const { store, actions } = useContext(Context);
 
-  const inicioImages = [
-    heroBg, banner1, recargables, celu,
-    desechables, perfumes, accesorios, liquidos
-  ];
+  /*   const inicioImages = [
+      heroBg, banner1, recargables, celu,
+      desechables, perfumes, accesorios, liquidos
+    ]; */
 
   // ===============================
   // Inicialización global app
@@ -152,7 +143,7 @@ const Layout = () => {
 
           {/* Inicio */}
           {/*       <Route path="/" element={<InicioWithSpinner images={inicioImages} />} /> */}
-          <Route path="/" element={<InicioNuevo images={inicioImages} />} />
+          <Route path="/" element={<InicioNuevo />} />
           {/*     <Route path="/inicio" element={<InicioWithSpinner images={inicioImages} />} /> */}
           <Route path="/inicio" element={<InicioNuevo />} />
 
@@ -175,7 +166,7 @@ const Layout = () => {
           <Route path="/mayorista" element={<Mayorista />} />
 
           {/* Mayorista inicio */}
-          <Route path="/mayorista/inicio" element={<InicioWithSpinner images={inicioImages} />} />
+          <Route path="/mayorista/inicio" element={<InicioNuevo />} />
 
           {/* Mayorista productos */}
           {/*  <Route path="/mayorista/products" element={<ProductGrid />} /> */}

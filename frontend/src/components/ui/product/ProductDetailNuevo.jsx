@@ -74,7 +74,10 @@ export default function ProductDetailNuevo() {
     const location = useLocation();
     const { store, actions } = useContext(Context);
 
-    const product = store.products?.find(p => p.id === parseInt(id));
+    const productId = Number(id);
+    const product = Number.isFinite(productId)
+        ? store.products?.find(p => Number(p.id) === productId)
+        : null;
 
     const [quantity, setQuantity] = useState(1);
     const [selectedFlavor, setSelectedFlavor] = useState("");
@@ -187,6 +190,25 @@ export default function ProductDetailNuevo() {
 
         navigate("/products");
     };
+
+    // Evita crash mientras carga productos o si el ID no existe.
+    if (!product) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                        {store.loading ? "Cargando producto..." : "Producto no encontrado"}
+                    </h2>
+                    <button
+                        onClick={() => navigate("/products")}
+                        className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                        Volver a productos
+                    </button>
+                </div>
+            </div>
+        );
+    }
     /* =========================
        UI
     ========================= */

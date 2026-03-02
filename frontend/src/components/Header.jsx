@@ -8,6 +8,24 @@ import logo22 from '@/assets/logo-22.png' */
 import zarpados from '@/assets/zarpados-22.png'
 import { withWholesale } from "../utils/navigation.js";
 
+const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
+
+const normalizeImagePath = (u = "") => {
+  if (!u) return "";
+  if (u.startsWith("/admin/uploads/")) u = u.replace("/admin", "/public");
+  if (u.startsWith("/uploads/")) u = `/public${u}`;
+  return u;
+};
+
+const toAbsUrl = (u = "") => {
+  u = normalizeImagePath(u);
+  if (!u) return "";
+  if (/^https?:\/\//i.test(u)) return u;
+  if (u.startsWith("/public/")) return `${API}${u}`;
+  if (u.startsWith("/")) return u;
+  return `${API}/${u}`;
+};
+
 
 
 export default function Header() {
@@ -418,9 +436,10 @@ export default function Header() {
                         className="flex items-center p-3 hover:bg-gray-300 cursor-pointer border-b border-gray-200 last:border-b-0"
                       >
                         <img
-                          src={p.image_url || "/sinImagen.jpg"}
+                          src={toAbsUrl(p.image_url) || "/sin_imagen.jpg"}
                           alt={p.name}
                           className="w-12 h-12 object-contain rounded mr-3"
+                          onError={(e) => { e.currentTarget.src = "/sin_imagen.jpg"; }}
                         />
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-800">{p.name}</div>

@@ -295,8 +295,8 @@ Pago: ${customerData.payment}
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-start justify-between p-4 sm:p-5 border-b">
-        <h2 id="cart-title" className="text-xl sm:text-2xl font-bold">
-          Carrito de compras
+        <h2 id="cart-title" className="text-xl sm:text-2xl font-serif tracking-wide">
+          Tu selección
         </h2>
         <button
           ref={closeBtnRef}
@@ -315,7 +315,7 @@ Pago: ${customerData.payment}
             <p className="text-base sm:text-lg">Tu carrito está vacío</p>
             <button
               onClick={() => (isRouteMode ? navigate("/") : close())}
-              className="mt-4 w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+              className="mt-4 w-full bg-[#232325] text-white px-6 py-3 rounded-lg font-serif tracking-wide hover:bg-black transition-colors"
             >
               Ver más productos
             </button>
@@ -466,7 +466,7 @@ Pago: ${customerData.payment}
         <div className="border-t p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xl font-semibold">Total:</span>
-            <span className="text-2xl font-bold text-purple-600">
+            <span className="text-2xl font-semibold text-gray-900 font-serif tracking-wide">
               {pricePrefix}{total.toLocaleString("es-AR")}
             </span>
           </div>
@@ -474,19 +474,19 @@ Pago: ${customerData.payment}
           <button
             onClick={() => setShowCheckout(true)}
 
-            className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            className="w-full bg-[#232325] text-white py-3 rounded-lg font-serif tracking-wide hover:bg-black transition-colors"
           >
-            Pedir por WhatsApp
+            📦 Solicitar Pedido por WhatsApp
           </button>
 
 
           <div className="mt-4 text-center">
             {isRouteMode ? (
-              <Link to="/" className="text-gray-700 underline hover:text-gray-900">
+              <Link to="/" className="text-gray-700 font-serif tracking-wide hover:text-gray-900 transition-colors">
                 Ver más productos
               </Link>
             ) : (
-              <button onClick={close} className="text-gray-700 underline hover:text-gray-900">
+              <button onClick={close} className="text-gray-700 font-serif tracking-wide hover:text-gray-900 transition-colors">
                 Ver más productos
               </button>
             )}
@@ -538,11 +538,12 @@ Pago: ${customerData.payment}
       {showCheckout && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[200]">
           <div className="bg-white rounded-lg p-6 w-[90%] max-w-md shadow-xl">
-            <h2 className="text-xl font-semibold mb-4">
+            <h2 className="text-2xl font-serif tracking-wide text-gray-900 mb-3 text-center">
               Datos para el pedido
             </h2>
+            <div className="w-12 h-[2px] bg-gray-900 mb-6 mx-auto"></div>
 
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-500 font-serif tracking-wide mb-5">
               Guardamos tus datos para futuras compras.
             </p>
 
@@ -552,7 +553,7 @@ Pago: ${customerData.payment}
               placeholder="Nombre"
               value={customerData.name}
               onChange={handleCustomerChange}
-              className="w-full border rounded px-3 py-2 mb-3"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 font-serif tracking-wide focus:outline-none focus:border-gray-900"
             />
 
             <input
@@ -561,11 +562,11 @@ Pago: ${customerData.payment}
               placeholder="Zona / Localidad"
               value={customerData.zone}
               onChange={handleCustomerChange}
-              className="w-full border rounded px-3 py-2 mb-4"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 font-serif tracking-wide focus:outline-none focus:border-gray-900"
             />
 
             <div className="mb-4">
-              <p className="text-sm font-medium mb-2">Forma de pago</p>
+              <p className="text-sm font-serif tracking-wide mb-3 text-gray-800">Forma de pago</p>
 
               <div className="space-y-2 text-sm">
                 {["Transferencia", "Efectivo", "Coordinar"].map(method => {
@@ -575,8 +576,8 @@ Pago: ${customerData.payment}
                     <label
                       key={method}
                       className={`flex items-center gap-3 cursor-pointer border rounded-md px-3 py-2 transition
-      ${selected
-                          ? "bg-green-500 text-white border-green-600 shadow-sm"
+     ${selected
+                          ? "bg-[#232325] text-white border-black shadow-sm"
                           : "bg-white hover:bg-gray-50 border-gray-300"}
       `}
                     >
@@ -585,7 +586,7 @@ Pago: ${customerData.payment}
                         name="payment"
                         checked={selected}
                         onChange={() => selectPayment(method)}
-                        className="accent-green-600"
+                        className="accent-gray-900"
                       />
                       {method}
                     </label>
@@ -594,7 +595,7 @@ Pago: ${customerData.payment}
 
               </div>
             </div>
-            <p className="text-sm text-gray-500 mt-2 mb-4 text-center">
+            <p className="text-sm text-gray-500 font-serif tracking-wide mt-3 mb-5 text-center">
               📦 Envío disponible <br />
               <span className="italic">El costo se coordina con el vendedor.</span>
             </p>
@@ -603,14 +604,14 @@ Pago: ${customerData.payment}
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowCheckout(false)}
-                className="px-4 py-2 border rounded"
+                className="px-4 py-2 border border-gray-300 rounded-lg font-serif tracking-wide hover:bg-gray-100 transition-colors"
               >
                 Cancelar
               </button>
 
               <button
                 onClick={sendOrder}
-                className="px-4 py-2 bg-purple-600 text-white rounded"
+                className="px-4 py-2 bg-[#232325] text-white rounded-lg font-serif tracking-wide hover:bg-black transition-colors"
               >
                 Enviar pedido
               </button>

@@ -1024,7 +1024,7 @@ export default function AdminProducts() {
 
     return (
         <div className="p-4 sm:p-6">
-            <h1 className="text-2xl font-bold mb-4">Admin Productos</h1>
+            <h1 className="text-2xl font-bold mb-4 text-center">Admin Productos</h1>
 
             {/* Barra superior */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">

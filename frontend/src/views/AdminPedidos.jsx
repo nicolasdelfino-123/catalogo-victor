@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
 
@@ -6,6 +7,7 @@ export default function AdminPedidos() {
     const [orders, setOrders] = useState([]);
     const [selected, setSelected] = useState(null); // 🆕 Pedido seleccionado
     const [loadingId, setLoadingId] = useState(null);
+    const navigate = useNavigate();
 
     const token =
         localStorage.getItem("token") || localStorage.getItem("admin_token");
@@ -51,7 +53,13 @@ export default function AdminPedidos() {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Pedidos recibidos</h1>
+            <button
+                onClick={() => navigate(-1)}
+                className="mb-4 px-4 py-2 rounded-lg bg-[#232325] text-white hover:bg-black transition-colors"
+            >
+                Volver
+            </button>
+            <h1 className="text-2xl font-bold mb-4 text-center">Pedidos recibidos</h1>
 
             {orders.length === 0 && (
                 <p className="text-gray-500 text-center mt-10">No hay pedidos aún.</p>
@@ -122,176 +130,163 @@ export default function AdminPedidos() {
             </div>
 
             {/* 🆕 Modal de detalle */}
-            {selected && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 relative overflow-y-auto max-h-[90vh]">
-                        <button
-                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-                            onClick={() => setSelected(null)}
-                        >
-                            ✕
-                        </button>
+            {selected && (() => {
 
+                const items = selected.order_items || selected.items || [];
+                const getItemBrand = (item) =>
+                    item?.product_brand ||
+                    item?.brand ||
+                    item?.marca ||
+                    item?.product?.brand ||
+                    item?.product?.marca ||
+                    null;
 
+                const getItemMl = (item) => {
+                    const raw =
+                        item?.selected_size_ml ??
+                        item?.product_volume_ml ??
+                        item?.volume_ml ??
+                        item?.size_ml ??
+                        item?.ml ??
+                        item?.product?.volume_ml;
+                    const n = Number(
+                        typeof raw === "string" ? raw.replace(/[^\d.]/g, "") : raw
+                    );
+                    return Number.isFinite(n) && n > 0 ? `${Math.floor(n)}ml` : null;
+                };
 
+                // detectar mayorista: si los precios parecen mayoristas
+                const isWholesale = items.some(i => i.price && i.price < 1000);
+                const currency = isWholesale ? "US$" : "$";
 
-                        {/* HEADER PEDIDO */}
-                        <div className="mb-4">
-                            <h2 className="text-xl font-semibold">
-                                Pedido #{selected.public_order_number || selected.id}
-                            </h2>
+                return (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 relative overflow-y-auto max-h-[90vh]">
 
-                            <p className="text-sm text-gray-500">
-                                {new Date(selected.created_at).toLocaleString("es-AR")}
-                            </p>
-                        </div>
+                            <button
+                                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                                onClick={() => setSelected(null)}
+                            >
+                                ✕
+                            </button>
 
-                        {/* CLIENTE */}
-                        <div className="mb-4 space-y-1">
-                            <p>
-                                <strong>Cliente:</strong> {selected.customer_first_name}
-                            </p>
+                            {/* HEADER PEDIDO */}
+                            <div className="mb-4">
+                                <h2 className="text-xl font-semibold">
+                                    {isWholesale ? "📦 Pedido Mayorista" : "🛍️ Pedido Minorista"} #{selected.public_order_number || selected.id}
+                                </h2>
 
-                            <p>
-                                <strong>Forma de pago:</strong>{" "}
-                                {{
-                                    transferencia: "Transferencia",
-                                    efectivo: "Efectivo",
-                                    coordinar: "A coordinar",
-                                }[selected.payment_method] || selected.payment_method}
-                            </p>
-                        </div>
+                                <p className="text-sm text-gray-500">
+                                    {new Date(selected.created_at).toLocaleString("es-AR")}
+                                </p>
+                            </div>
 
-                        {/* ENVÍO */}
-                        <div className="mb-4">
-                            <h3 className="font-semibold mb-1">Datos de envío</h3>
+                            {/* CLIENTE */}
+                            <div className="mb-4 space-y-1">
+                                <p>
+                                    <strong>Cliente:</strong> {selected.customer_first_name}
+                                </p>
 
-                            <p>
-                                <strong>Ubicación:</strong>{" "}
-                                {selected.shipping_address?.city ||
-                                    selected.shipping_address?.address ||
-                                    "Retiro en local"}
-                            </p>
-                        </div>
+                                <p>
+                                    <strong>Forma de pago:</strong>{" "}
+                                    {{
+                                        transferencia: "Transferencia",
+                                        efectivo: "Efectivo",
+                                        coordinar: "A coordinar",
+                                    }[selected.payment_method] || selected.payment_method}
+                                </p>
+                            </div>
 
+                            {/* ENVÍO */}
+                            <div className="mb-4">
+                                <h3 className="font-semibold mb-1">Datos de envío</h3>
 
+                                <p>
+                                    <strong>Ubicación:</strong>{" "}
+                                    {selected.shipping_address?.city ||
+                                        selected.shipping_address?.address ||
+                                        "Retiro en local"}
+                                </p>
+                            </div>
 
+                            {/* Productos */}
+                            <h3 className="text-lg font-medium mb-2">Productos</h3>
 
+                            <div className="border rounded">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="p-2 text-left">Producto</th>
+                                            <th className="p-2 text-center">Cant.</th>
+                                            <th className="p-2 text-right">Precio</th>
+                                            <th className="p-2 text-right">Subtotal</th>
+                                        </tr>
+                                    </thead>
 
+                                    <tbody>
+                                        {items.map((i, idx) => {
+                                            const itemBrand = getItemBrand(i);
+                                            const itemMl = getItemMl(i);
 
+                                            return (
+                                                <tr key={idx} className="border-t">
 
+                                                    <td className="p-2">
+                                                        <span className="font-medium">
+                                                            {i.product_name || i.title || "Producto sin nombre"}
+                                                        </span>
+                                                        {(itemBrand || itemMl) && (
+                                                            <span className="block text-xs text-gray-500">
+                                                                {[itemBrand, itemMl]
+                                                                    .filter(Boolean)
+                                                                    .join(" - ")}
+                                                            </span>
+                                                        )}
 
+                                                        {i.selected_flavor && (
+                                                            <span className="block text-xs text-gray-500">
+                                                                Sabor: {i.selected_flavor}
+                                                            </span>
+                                                        )}
+                                                    </td>
 
-                        {/* Productos */}
-                        <h3 className="text-lg font-medium mb-2">Productos</h3>
-                        <div className="border rounded">
-                            <table className="w-full text-sm">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="p-2 text-left">Producto</th>
-                                        <th className="p-2 text-center">Cant.</th>
-                                        <th className="p-2 text-right">Precio</th>
-                                        <th className="p-2 text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                                                    <td className="p-2 text-center">
+                                                        {i.quantity}
+                                                    </td>
 
-                                    {(selected.order_items || selected.items || []).map((i, idx) => (
+                                                    <td className="p-2 text-right">
+                                                        {currency}{i.price?.toLocaleString() || 0}
+                                                    </td>
 
-                                        <tr key={idx} className="border-t">
-                                            <td className="p-2">
-                                                <span className="font-medium">
-                                                    {i.product_name || i.title || "Producto sin nombre"}
-                                                </span>
-                                                {i.selected_flavor && (
-                                                    <span className="block text-xs text-gray-500">
-                                                        Sabor: {i.selected_flavor}
-                                                    </span>
-                                                )}
+                                                    <td className="p-2 text-right">
+                                                        {currency}{(i.quantity * i.price).toLocaleString() || 0}
+                                                    </td>
+
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+
+                                    <tfoot>
+                                        <tr className="border-t font-semibold">
+                                            <td colSpan="3" className="p-2 text-right">
+                                                Total
                                             </td>
 
-                                            <td className="p-2 text-center">{i.quantity}</td>
                                             <td className="p-2 text-right">
-                                                ${i.price?.toLocaleString() || 0}
-                                            </td>
-                                            <td className="p-2 text-right">
-                                                ${(i.quantity * i.price).toLocaleString() || 0}
+                                                {currency}{selected.total_amount?.toLocaleString() || 0}
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="border-t font-semibold">
-                                        <td colSpan="3" className="p-2 text-right">
-                                            Total
-                                        </td>
-                                        <td className="p-2 text-right">
-                                            ${selected.total_amount?.toLocaleString() || 0}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                    </tfoot>
+
+                                </table>
+                            </div>
+
                         </div>
-
-                        {/* <div className="mt-4 flex items-center justify-between">
-                            <input
-                                type="text"
-                                placeholder="Código de envío (opcional)"
-                                value={selected.tracking_code || ""}
-                                onChange={(e) =>
-                                    setSelected({ ...selected, tracking_code: e.target.value })
-                                }
-                                className="border rounded px-3 py-2 text-sm w-1/2"
-                            />
-                            {selected.status !== "enviado" && (
-                                <button
-                                    onClick={async () => {
-                                        setLoadingId(selected.id);
-                                        await updateStatus(selected.id, "enviado", selected.tracking_code);
-                                        setLoadingId(null);
-                                    }}
-                                    disabled={loadingId === selected.id}
-                                    className={`px-3 py-1 rounded text-white ${loadingId === selected.id
-                                        ? "bg-purple-400 cursor-not-allowed"
-                                        : "bg-purple-600 hover:bg-purple-700"
-                                        }`}
-                                >
-                                    {loadingId === selected.id ? (
-                                        <span className="flex items-center gap-2">
-                                            <svg
-                                                className="animate-spin h-4 w-4 text-white"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                ></circle>
-                                                <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                                ></path>
-                                            </svg>
-                                            Enviando...
-                                        </span>
-                                    ) : (
-                                        "Marcar enviado"
-                                    )}
-                                </button>
-
-
-                            )}
-                        </div>
- */}
                     </div>
-                </div>
-            )}
+                );
+
+            })()}
         </div>
     );
 }

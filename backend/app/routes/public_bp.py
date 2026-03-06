@@ -189,12 +189,19 @@ def create_order():
         db.session.flush()  # obtiene order.id
 
         for item in data.get("order_items", []):
+            raw_size_ml = item.get("selected_size_ml")
+            try:
+                selected_size_ml = int(raw_size_ml) if raw_size_ml not in (None, "") else None
+            except (TypeError, ValueError):
+                selected_size_ml = None
+
             order_item = OrderItem(
                 order_id=order.id,
                 product_id=item.get("product_id"),
                 quantity=item.get("quantity", 1),
                 price=item.get("price", 0),
-                selected_flavor=item.get("selected_flavor")
+                selected_flavor=item.get("selected_flavor"),
+                selected_size_ml=selected_size_ml
             )
             db.session.add(order_item)
 

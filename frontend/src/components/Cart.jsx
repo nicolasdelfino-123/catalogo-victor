@@ -98,7 +98,9 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
 
     const isWholesale = window.location.pathname.startsWith("/mayorista");
 
-    let message = "Hola! Quiero hacer el siguiente pedido:\n\n";
+    let message = isWholesale
+      ? "Hola! Quiero hacer el siguiente pedido:\n*PEDIDO MAYORISTA*\n\n"
+      : "Hola! Quiero hacer el siguiente pedido:\n\n";
 
     let total = 0;
     let hasUnknownPrice = false;
@@ -123,8 +125,8 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
         const subtotal = price * qty;
         total += subtotal;
 
-        message += `   $${price.toLocaleString("es-AR")} c/u\n`;
-        message += `   Subtotal: $${subtotal.toLocaleString("es-AR")}\n\n`;
+        message += `   ${pricePrefix}${price.toLocaleString("es-AR")} c/u\n`;
+        message += `   Subtotal: ${pricePrefix}${subtotal.toLocaleString("es-AR")}\n\n`;
       } else {
         hasUnknownPrice = true;
         message += `   Precio: Consultar\n\n`;
@@ -134,7 +136,7 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
     if (hasUnknownPrice) {
       message += "*TOTAL:* Consultar\n\n";
     } else {
-      message += `*TOTAL:* $${total.toLocaleString("es-AR")}\n\n`;
+      message += `*TOTAL:* ${pricePrefix}${total.toLocaleString("es-AR")}\n\n`;
     }
 
     // 🚚 info de envío (PRO y simple)

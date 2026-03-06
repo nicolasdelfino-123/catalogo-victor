@@ -306,17 +306,20 @@ def create_order():
         
         # Crear los items de la orden y actualizar stock
         for item_data in order_items_data:
+            product = Product.query.get(item_data['product_id'])
+
             order_item = OrderItem(
                 order_id=order.id,
                 product_id=item_data['product_id'],
                 quantity=item_data['quantity'],
-                price=item_data['price']
+                price=item_data['price'],
+                selected_size_ml=product.volume_ml if product else None
             )
             db.session.add(order_item)
             
             # Actualizar stock
-            product = Product.query.get(item_data['product_id'])
-            product.stock -= item_data['quantity']
+            if product:
+                product.stock -= item_data['quantity']
         
         # Vaciar carrito
         CartItem.query.filter_by(user_id=current_user_id).delete()

@@ -654,7 +654,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 				} else {
 					updatedCart = [
 						...currentCart,
-						{ ...product, quantity: Math.min(quantity, maxStock), selectedFlavor: product.selectedFlavor || null }
+						{
+							...product,
+							quantity: Math.min(quantity, maxStock),
+							selectedFlavor: product.selectedFlavor || null,
+							selected_size_ml: product.selected_size_ml ?? product.volume_ml ?? null
+						}
 					];
 					console.log("🆕 [addToCart] Agregó producto nuevo:", product.name);
 				}

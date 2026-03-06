@@ -230,6 +230,7 @@ def create_preference():
         # Normalizar items
         items = []
         flavors_meta = []   # 👈 guardaremos acá los sabores para metadata
+        sizes_meta = []     # 👈 guardaremos los ml elegidos para metadata
         for it in data['items']:
             qty = int(it.get('quantity', 1) or 1)
             price = float(it.get('unit_price', 0) or 0)
@@ -248,6 +249,11 @@ def create_preference():
                 flavors_meta.append({
                     "product_id": str(it.get("id")),
                     "flavor": it["selected_flavor"]
+                })
+            if it.get("selected_size_ml") not in (None, ""):
+                sizes_meta.append({
+                    "product_id": str(it.get("id")),
+                    "size_ml": it.get("selected_size_ml")
                 })
 
         frontend_url   = os.getenv('FRONTEND_URL', 'http://localhost:5173').rstrip('/')
@@ -302,6 +308,7 @@ def create_preference():
                 "name": payer_in.get("name", ""),
                 "surname": payer_in.get("surname", ""),
                 "flavors": flavors_meta,
+                "sizes_ml": sizes_meta,
                 "comment": comment,
                 "shipping_address": shipping_info,
                 "billing_address": billing_info
@@ -464,7 +471,9 @@ def create_order_from_payment(payment_data):
 
         # ✅ Lista de sabores en orden (no dict, para que no se pisen)
         flavors_list = [f.get("flavor") for f in meta.get("flavors", [])]
+        sizes_ml_list = [s.get("size_ml") for s in meta.get("sizes_ml", [])]
         print("[DEBUG] flavors_list:", flavors_list)
+        print("[DEBUG] sizes_ml_list:", sizes_ml_list)
 
         # Datos comprador
         first_name = meta.get('name') or addi.get('name') or payer.get('first_name') or ''
@@ -635,6 +644,13 @@ def create_order_from_payment(payment_data):
 
             # ✅ Tomar sabor según posición si no viene en el item
             selected_flavor = it.get("selected_flavor") or (flavors_list[idx] if idx < len(flavors_list) else None)
+            raw_selected_size_ml = it.get("selected_size_ml")
+            if raw_selected_size_ml in (None, "") and idx < len(sizes_ml_list):
+                raw_selected_size_ml = sizes_ml_list[idx]
+            try:
+                selected_size_ml = int(raw_selected_size_ml) if raw_selected_size_ml not in (None, "") else None
+            except (TypeError, ValueError):
+                selected_size_ml = None
             print(f"[DEBUG] Item prod_id={prod_id}, qty={qty}, flavor={selected_flavor}")
 
             session.add(OrderItem(
@@ -642,7 +658,8 @@ def create_order_from_payment(payment_data):
                 product_id=int(prod_id),
                 quantity=qty,
                 price=price,
-                selected_flavor=selected_flavor
+                selected_flavor=selected_flavor,
+                selected_size_ml=selected_size_ml
             ))
 
             product = session.query(Product).get(int(prod_id))
@@ -858,6 +875,11 @@ def create_manual_order():
             prod_id = int(it["id"])
             qty = int(it["quantity"])
             flavor = it.get("selected_flavor")
+            raw_selected_size_ml = it.get("selected_size_ml")
+            try:
+                selected_size_ml = int(raw_selected_size_ml) if raw_selected_size_ml not in (None, "") else None
+            except (TypeError, ValueError):
+                selected_size_ml = None
             price = float(it["unit_price"])
             subtotal = qty * price
 
@@ -866,7 +888,8 @@ def create_manual_order():
                 product_id=prod_id,
                 quantity=qty,
                 price=price,
-                selected_flavor=flavor
+                selected_flavor=flavor,
+                selected_size_ml=selected_size_ml
             ))
 
             product = session.query(Product).get(prod_id)

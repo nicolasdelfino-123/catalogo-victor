@@ -303,7 +303,8 @@ const Checkout = () => {
                     title: item.name,
                     quantity: qty,
                     unit_price: price,
-                    selected_flavor: item.selectedFlavor || null // 👈 NUEVO: envía el sabor elegido
+                    selected_flavor: item.selectedFlavor || null, // 👈 NUEVO: envía el sabor elegido
+                    selected_size_ml: item.selected_size_ml ?? item.volume_ml ?? item.product?.volume_ml ?? null,
                 }
             })
 
@@ -1041,6 +1042,7 @@ const Checkout = () => {
                                                 quantity: Math.max(1, parseInt(item.quantity || 1)),
                                                 unit_price: Number(item.price),
                                                 selected_flavor: item.selectedFlavor || null,
+                                                selected_size_ml: item.selected_size_ml ?? item.volume_ml ?? item.product?.volume_ml ?? null,
                                             }));
 
                                             const payload = {

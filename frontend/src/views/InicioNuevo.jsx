@@ -103,7 +103,7 @@ export default function InicioNuevo() {
                     </div>
                 )}
             </section>
-            <div className="flex justify-center mt-10">
+            <div className="flex justify-center mt-0 mb-12 lg:px-12 lg:py-12">
                 <div
                     onClick={() => navigate("/products")}
                     className="

@@ -130,7 +130,7 @@ function RichTextInput({ value = "", onChange, placeholder = "", minHeight = "12
                 }}
             />
             {!stripHtml(value) && (
-                <div className="pointer-events-none absolute left-3 top-2 text-gray-400 text-sm">
+                <div className="pointer-events-none absolute left-3 top-2 text-gray-400 text-sm" style={{ left: "19px" }}>
                     {placeholder}
                 </div>
             )}
@@ -1482,6 +1482,7 @@ export default function AdminProducts() {
                             placeholder="Descripción breve (se muestra debajo del precio)"
                             onChange={(next) => setForm({ ...form, description: next })}
                             minHeight="90px"
+                            className="px-7 py-2"
                         />
 
                         <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>

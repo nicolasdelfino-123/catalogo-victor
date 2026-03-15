@@ -528,7 +528,8 @@ export default function AdminProducts() {
     const confirmEditWholesale = async () => {
         if (!editingWholesaleId) return;
 
-        const newPrice = editingWholesale === "" ? null : Number(editingWholesale);
+        const newPrice = editingWholesale === "" ? null : Number(String(editingWholesale).replace(/\./g, "").replace(",", "."));
+
 
         if (newPrice !== null && (!Number.isFinite(newPrice) || newPrice < 0)) {
             alert("Precio mayorista inválido");
@@ -832,7 +833,7 @@ export default function AdminProducts() {
                 ? stockFromVolumes
                 : Number(form.stock ?? 0);
             const directRetail = Number(form.price);
-            const directWholesale = Number(form.price_wholesale);
+            const directWholesale = Number(String(form.price_wholesale || "").replace(/\./g, "").replace(",", "."));
             const payload = {
                 ...cleanForm,
                 price:
@@ -1284,11 +1285,8 @@ export default function AdminProducts() {
                                                     type="text"
                                                     inputMode="numeric"
                                                     autoFocus
-                                                    value={Number(editingWholesale || 0).toLocaleString("es-AR")}
-                                                    onChange={(e) => {
-                                                        const raw = e.target.value.replace(/\./g, "").replace(/[^\d]/g, "");
-                                                        setEditingWholesale(raw);
-                                                    }}
+                                                    value={editingWholesale ?? ""}
+                                                    onChange={(e) => setEditingWholesale(e.target.value.replace(/[^\d,.\s]/g, ""))}
                                                     onKeyDown={(e) => {
                                                         if (e.key === "Enter") confirmEditWholesale();
                                                         if (e.key === "Escape") cancelEditWholesale();
@@ -1552,7 +1550,7 @@ export default function AdminProducts() {
                                 onClick={() => {
                                     const ml = Number(form.volume_ml);
                                     const price = Number(form.price);
-                                    const priceWholesale = Number(form.price_wholesale);
+                                    const priceWholesale = Number(String(form.price_wholesale || "").replace(/\./g, "").replace(",", "."));
                                     const stock = Math.max(0, Math.floor(Number(form.volume_stock) || 0));
                                     const row = {
                                         ml: Number.isFinite(ml) && ml > 0 ? Math.floor(ml) : null,
@@ -1630,15 +1628,12 @@ export default function AdminProducts() {
                                         type="text"
                                         inputMode="numeric"
                                         {...noSpin}
-                                        value={
-                                            form.price_wholesale
-                                                ? Number(form.price_wholesale).toLocaleString("es-AR")
-                                                : ""
-                                        }
+                                        value={form.price_wholesale ?? ""}
                                         onChange={(e) =>
                                             setForm({
                                                 ...form,
-                                                price_wholesale: e.target.value.replace(/\D/g, "")
+                                                price_wholesale: e.target.value.replace(/[^\d,.\s]/g, "")
+
                                             })
                                         }
                                     />

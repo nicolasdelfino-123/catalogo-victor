@@ -267,12 +267,17 @@ export default function Header() {
       window.scrollTo({ top: y, behavior: "smooth" });
     };
 
-    if (window.location.pathname !== "/inicio") {
-      // navegamos al inicio y, tras montar, scrolleamos
-      navigate("/inicio", { state: { scrollTo: "contacto" } });
+
+
+    const currentPath = window.location.pathname;
+    const targetInicio = withWholesale("/inicio");
+
+    if (currentPath !== "/inicio" && currentPath !== "/mayorista/inicio") {
+      navigate(targetInicio, { state: { scrollTo: "contacto" } });
     } else {
       doScroll();
     }
+
 
     setIsMenuOpen(false); // cerrar menú móvil si estaba abierto
   };
@@ -445,7 +450,7 @@ export default function Header() {
               Mayoristas
             </Link> */}
             <a
-              href="/inicio#asesoria"
+              href={withWholesale("/inicio") + "#asesoria"}
               onClick={goToContact}
               className="text-gray-300 hover:text-amber-300 transition-all duration-300"
             >
@@ -671,8 +676,9 @@ export default function Header() {
               </div>
 
               <a
-                href="/inicio#contacto"
+                href={withWholesale("/inicio") + "#asesoria"}
                 onClick={goToContact}
+
                 className="block pt-4 mt-3 border-t border-gray-700 text-gray-200 hover:text-amber-300 transition-colors text-lg"
               >
                 Contacto

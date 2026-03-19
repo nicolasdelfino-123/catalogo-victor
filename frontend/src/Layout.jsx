@@ -206,10 +206,22 @@ const Layout = () => {
           <Route path="/admin/pedidos" element={<AdminPedidos />} />
 
           {/* Otros */}
+
+
+
+
+
+          {/* Otros */}
           <Route path="/devoluciones" element={<Devoluciones />} />
           <Route path="/envios" element={<Envios />} />
           <Route path="/aviso-legal" element={<AvisoLegal />} />
+
+          <Route path="/mayorista/devoluciones" element={<Devoluciones />} />
+          <Route path="/mayorista/envios" element={<Envios />} />
+          <Route path="/mayorista/aviso-legal" element={<AvisoLegal />} />
+
           <Route path="/thank-you-transfer" element={<ThankYouTransfer />} />
+
 
           {/* Cuenta */}
           <Route path="/cuenta" element={<AccountLayout />}>

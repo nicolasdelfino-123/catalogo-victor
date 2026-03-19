@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
+import { withWholesale } from "../utils/navigation.js";
+
 
 const FOOTER_CATEGORIES = [
     { label: "Perfumes Masculinos", slug: "perfumes-masculinos" },
@@ -187,7 +189,7 @@ export default function AvisoLegal() {
                     {FOOTER_CATEGORIES.map((cat) => (
                         <li key={cat.slug}>
                             <Link
-                                to={`/categoria/${cat.slug}`}
+                                to={withWholesale(`/categoria/${cat.slug}`)}
                                 className="block py-3 text-gray-700 font-serif hover:text-black transition-colors"
                             >
                                 {cat.label}

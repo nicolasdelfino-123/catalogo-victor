@@ -1,5 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { withWholesale } from '../utils/navigation.js'
+
 import logofooter from "../assets/logofooter.png";
 
 const phone = "5493533459552";
@@ -43,7 +45,7 @@ const Footer = () => {
                                 {FOOTER_CATEGORIES.map((c) => (
                                     <li key={c.slug}>
                                         <Link
-                                            to={`/categoria/${c.slug}`}
+                                            to={withWholesale(`/categoria/${c.slug}`)}
                                             state={{ fromFooter: true }}     // 👈 Marca que viene desde el footer
                                             className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
                                         >
@@ -59,19 +61,22 @@ const Footer = () => {
                             <ul className="space-y-2 text-gray-400">
                                 <li>
                                     <Link
-                                        to="/aviso-legal"
+                                        to={withWholesale("/aviso-legal")}
+
                                         className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
                                     >
                                         Aviso Legal
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link to="/envios" className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full">
+                                    <Link to={withWholesale("/envios")}
+                                        className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full">
                                         Envíos
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link to="/devoluciones" className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full">
+                                    <Link to={withWholesale("/devoluciones")}
+                                        className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full">
                                         Devoluciones
                                     </Link>
                                 </li>

@@ -264,17 +264,17 @@ export default function ProductCardPerfumes({ product, returnTo, isGrid = true }
         navigate(`${prefix}/product/${product.id}`, { state });
     };
     return (
-        <div className="bg-white rounded-xl border border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200 transition-all duration-300 flex flex-col h-full">
+        <div className="group bg-white rounded-xl border border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200 transition-all duration-300 flex flex-col h-full">
 
             {/* Imagen */}
             <div
                 onClick={handleProductClick}
-                className="aspect-square bg-gradient-to-b from-white to-stone-50 flex items-center justify-center p-6 sm:p-8 cursor-pointer overflow-hidden"
+                className="aspect-square bg-gradient-to-b from-white to-stone-50 flex items-center justify-center p-2 sm:p-4 lg:p-5 cursor-pointer overflow-hidden"
             >
                 <img
                     src={toAbsUrl(product?.image_url) || sinImagen}
                     alt={product?.name || "Producto"}
-                    className="max-h-full object-contain transition-transform duration-500 ease-out hover:scale-110"
+                    className="h-full w-full object-contain scale-[1.12] sm:scale-[1.08] transition-transform duration-500 ease-out group-hover:scale-[1.16] sm:group-hover:scale-[1.12]"
                     onError={(e) => { e.currentTarget.src = sinImagen; }}
                 />
             </div>

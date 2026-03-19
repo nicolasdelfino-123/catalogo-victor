@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Context } from "../js/store/appContext.jsx";
 import ProductCardPerfumes from "../components/ui/cards/ProductCardPerfumes.jsx";
 import HomeContact from "../components/home/HomeContact.jsx";
-import banner from "../assets/banner_arabe.jpg";
+import banner from "../assets/banner_shatha.png";
 import Asesoria from "../components/Asesoria.jsx";
 
 
@@ -58,25 +58,26 @@ export default function InicioNuevo() {
 
 
             {/* HERO PREMIUM CON IMAGEN IMPORTADA */}
-            <section className="relative h-[600px] sm:h-[480px] md:h-[75vh] flex items-center justify-center text-center overflow-hidden">
+            <section className="relative h-[400px] sm:h-[420px] md:h-[75vh] flex items-center justify-center text-center overflow-hidden">
 
                 {/* Fondo con tu imagen */}
                 <div
-                    className="absolute inset-0 bg-center bg-cover animate-zoomSlow"
+                    className="absolute inset-0 bg-cover bg-[center_top_-5px] sm:bg-center animate-zoomSlow brightness-110 saturate-110"
                     style={{ backgroundImage: `url(${banner})` }}
                 />
 
                 {/* Overlay oscuro elegante */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70" />
+
+                <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/0 to-black/40" />
 
                 {/* Contenido */}
-                <div className="relative z-10 px-6 max-w-3xl">
-                    <h1 className="text-4xl md:text-6xl font-serif font-semibold text-white mb-4 tracking-wide">
-                        Fragancias Orientales
+                <div className="relative z-10 px-6 max-w-3xl mt-[190px] sm:mt-[180px] md:mt-[350px]">
+                    <h1 className="text-2xl md:text-5xl font-serif font-semibold text-white mb-4 tracking-wide">
+                        Fragancias Árabes
                     </h1>
 
-                    <p className="text-lg md:text-xl font-serif text-gray-200 mb-6 tracking-wide">
-                        Fragancias intensas • Elegancia oriental • Exclusividad
+                    <p className="text-sm md:text-xl font-serif text-gray-200 mb-6 tracking-wide">
+                        Aromas intensos • Elegancia sofisticada • Exclusividad
                     </p>
 
                     {/* <a

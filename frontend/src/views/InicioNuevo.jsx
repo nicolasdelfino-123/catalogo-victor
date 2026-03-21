@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Context } from "../js/store/appContext.jsx";
 import ProductCardPerfumes from "../components/ui/cards/ProductCardPerfumes.jsx";
 import HomeContact from "../components/home/HomeContact.jsx";
-import banner from "../assets/banner_shatha.png";
+import banner from "../assets/banner_arabe.jpg";
 import Asesoria from "../components/Asesoria.jsx";
 
 

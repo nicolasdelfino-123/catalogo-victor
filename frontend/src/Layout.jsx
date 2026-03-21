@@ -134,7 +134,7 @@ const Layout = () => {
 
   return (
     <div>
-      {loading && <GlobalSpinner />}
+      <GlobalSpinner appReady={!loading} />
       <BrowserRouter>
 
         {/* 🔥 Detecta si estamos en /mayorista */}

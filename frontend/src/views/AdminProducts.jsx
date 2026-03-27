@@ -2060,12 +2060,28 @@ export default function AdminProducts() {
 
                         <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del producto</label>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             <input
-                                className="w-full border rounded px-3 py-2"
-                                placeholder="URL de imagen (opcional si subís una)"
+                                className="flex-1 min-w-[100px] border rounded px-3 py-2"
+                                placeholder="URL(Enter para agregar)"
                                 value={form.image_url || ""}
                                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+
+                                        if (!form.image_url) return;
+
+                                        // Agregar a la galería
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            image_urls: prev.image_urls
+                                                ? [...prev.image_urls, prev.image_url]
+                                                : [prev.image_url],
+                                            image_url: "" // limpiar input
+                                        }));
+                                    }
+                                }}
                             />
 
                             {/* Subir PRINCIPAL */}

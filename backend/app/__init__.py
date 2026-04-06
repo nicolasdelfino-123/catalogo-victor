@@ -23,10 +23,17 @@ def create_app():
     We define static_folder because Flask is going to serve the front end files (Only in PRODUCTION!)
     since we are running everything from a single Dockerfile in production
     """
-    app = Flask(__name__, static_folder="front/build", static_url_path="/")
+    enviroment = os.getenv("FLASK_ENV", "production")
+
+    if enviroment == "production":
+        static_folder = "/var/www/catalogo/catalogo-attar/frontend/dist"
+    else:
+        static_folder = "frontend/dist"
+
+    app = Flask(__name__, static_folder=static_folder, static_url_path="/")
 
     # Configuración básica según entorno
-    enviroment = os.getenv("FLASK_ENV", "production")
+ 
     if enviroment == "development":
         app.config.from_object(DevelopmentConfig)
     elif enviroment == "testing":

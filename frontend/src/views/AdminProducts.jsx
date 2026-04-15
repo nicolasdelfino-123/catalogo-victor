@@ -1351,7 +1351,7 @@ export default function AdminProducts() {
                                         stock: it.stock || 0,
                                         image_url: it.image_url || "",
                                         category_id: catId,
-                                        category_name: ID_TO_CATEGORY_NAME[catId] || "Fragancias de Hombre",
+                                        category_name: ID_TO_CATEGORY_NAME[catId] || "Más Vendidos",
                                         flavor_enabled: catalog.length > 0,
                                         flavor_catalog: catalog, // ✅ catálogo completo para edición
                                         flavors: catalog.map((x) => x.name), // ✅ todos los sabores como activos por defecto
@@ -1792,7 +1792,7 @@ export default function AdminProducts() {
 
                                                     setForm({
                                                         ...p,
-                                                        category_id: Number(p.category_id) === 6 ? 1 : p.category_id,
+                                                        category_id: p.category_id,
                                                         price: "",
                                                         price_wholesale: "",
                                                         volume_ml: "",
@@ -2498,7 +2498,7 @@ export default function AdminProducts() {
                                 setForm({
                                     ...form,
                                     category_id: categoryId,
-                                    category_name: ID_TO_CATEGORY_NAME[categoryId] || "Fragancias de Hombre",
+                                    category_name: ID_TO_CATEGORY_NAME[categoryId] || "Más Vendidos",
                                     flavor_enabled: show,
                                     flavors: show ? form.flavors || [] : [],
                                 })

@@ -20,19 +20,43 @@
   </url>
 
   <url>
-    <loc>https://www.vjparfum-decants.com.ar/categoria/perfumes-masculinos</loc>
+    <loc>https://www.vjparfum-decants.com.ar/categoria/mas-vendidos</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://www.vjparfum-decants.com.ar/categoria/femeninos</loc>
+    <loc>https://www.vjparfum-decants.com.ar/categoria/fragancias-masculinas</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://www.vjparfum-decants.com.ar/categoria/unisex</loc>
+    <loc>https://www.vjparfum-decants.com.ar/categoria/fragancias-femeninas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vjparfum-decants.com.ar/categoria/fragancias-unisex</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vjparfum-decants.com.ar/categoria/perfumes-arabes</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vjparfum-decants.com.ar/categoria/perfumes-de-disenador</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.vjparfum-decants.com.ar/categoria/perfumes-de-nicho</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

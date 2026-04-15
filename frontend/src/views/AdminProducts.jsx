@@ -1595,7 +1595,7 @@ export default function AdminProducts() {
                                             ) : (
                                                 <div className="flex items-center justify-center gap-2">
                                                     <span className="whitespace-nowrap tabular-nums">
-                                                        {wholesaleShown ? `US$ ${formatPrice(wholesaleShown)}` : "—"}
+                                                        {wholesaleShown ? `$ ${formatPrice(wholesaleShown)}` : "—"}
                                                     </span>
                                                     <button
                                                         type="button"

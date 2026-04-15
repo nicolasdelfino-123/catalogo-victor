@@ -237,7 +237,7 @@ export default function ProductDetailNuevo() {
     const finalPrice = isWholesale
         ? (wholesalePrice > 0 ? wholesalePrice : null)
         : (retailPrice > 0 ? retailPrice : null);
-    const pricePrefix = isWholesale ? "US$" : "$";
+    const pricePrefix = isWholesale ? "$" : "$";
 
     /* =========================
        EFFECTS

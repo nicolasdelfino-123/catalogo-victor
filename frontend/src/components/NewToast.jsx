@@ -51,7 +51,7 @@ export default function NewToast({ toast, onClose }) {
     if (!visible) return null;
 
     const isWholesale = window.location.pathname.startsWith("/mayorista");
-    const pricePrefix = isWholesale ? "US$" : "$";
+    const pricePrefix = isWholesale ? "$" : "$";
 
     const toastImage = toAbsUrl(data?.product?.image || data?.product?.image_url || "");
 

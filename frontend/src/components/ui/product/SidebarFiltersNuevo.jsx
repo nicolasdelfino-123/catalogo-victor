@@ -385,7 +385,7 @@ export default function SidebarFiltersNuevo({
                         className="inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm"
                     >
                         <Menu size={18} />
-                        Ver barra lateral
+                        Buscá Tu Perfume
                         {hasActiveFilters && (
                             <span className="bg-[#232325] hover:bg-black text-white text-xs px-1.5 py-0.5 rounded-full">
                                 {getActiveFilterTags().length}

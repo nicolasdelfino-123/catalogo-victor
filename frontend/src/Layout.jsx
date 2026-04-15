@@ -140,7 +140,7 @@ const Layout = () => {
         {/* 🔥 Detecta si estamos en /mayorista */}
         <ModeWatcher />
 
-        {/*  <FloatingButtons /> */}
+        <FloatingButtons />
         <Header />
 
         <Routes>

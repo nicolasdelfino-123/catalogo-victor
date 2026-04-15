@@ -584,7 +584,7 @@ export default function Header() {
                           <div className="text-sm font-bold text-green-600">
                             {location.pathname.startsWith("/mayorista")
                               ? wholesalePrice && wholesalePrice > 0
-                                ? `US$${formatPrice(wholesalePrice)}`
+                                ? `${formatPrice(wholesalePrice)}`
                                 : "Consultar"
                               : retailPrice && retailPrice > 0
                                 ? `$${formatPrice(retailPrice)}`
@@ -663,7 +663,7 @@ export default function Header() {
                                 {location.pathname.startsWith("/mayorista")
                                   ? (
                                     wholesalePrice && wholesalePrice > 0
-                                      ? `US$${formatPrice(wholesalePrice)}`
+                                      ? `${formatPrice(wholesalePrice)}`
                                       : "Consultar"
                                   )
                                   : (retailPrice && retailPrice > 0

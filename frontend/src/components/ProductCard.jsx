@@ -58,7 +58,7 @@ export default function ProductCard({ product }) {
   const finalPrice = isWholesale
     ? (wholesalePrice > 0 ? wholesalePrice : null)
     : retailPrice;
-  const pricePrefix = isWholesale ? "US$" : "$";
+  const pricePrefix = isWholesale ? "$" : "$";
 
 
 

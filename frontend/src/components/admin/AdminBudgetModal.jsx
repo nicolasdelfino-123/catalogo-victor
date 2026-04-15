@@ -3,6 +3,7 @@ import { formatPrice } from "../../utils/price.js";
 
 const PRICE_MODE_RETAIL = "retail";
 const PRICE_MODE_WHOLESALE = "wholesale";
+const CUSTOM_QTY_VALUE = "custom";
 
 const getBasePrice = (item, priceMode) => {
     if (priceMode === PRICE_MODE_WHOLESALE) {
@@ -17,34 +18,41 @@ const getBasePrice = (item, priceMode) => {
 };
 
 const normalizeDigits = (value = "") => String(value || "").replace(/[^\d]/g, "");
-const normalizePriceDraft = (value = "") => {
-    const raw = String(value || "").replace(/[^\d,.\s]/g, "").replace(/\s+/g, "");
-    if (!raw) return "";
+const sanitizePriceDraft = (value = "") =>
+    String(value || "").replace(/[^\d,.\s]/g, "").replace(/\s+/g, "");
+
+const parsePriceDraft = (value = "") => {
+    const raw = sanitizePriceDraft(value);
+    if (!raw) return 0;
 
     const lastComma = raw.lastIndexOf(",");
     const lastDot = raw.lastIndexOf(".");
-    const separatorIndex = Math.max(lastComma, lastDot);
+    const hasComma = lastComma >= 0;
+    const hasDot = lastDot >= 0;
 
-    if (separatorIndex === -1) {
-        return raw.replace(/[.,]/g, "");
+    let normalized = raw.replace(/[.,]/g, "");
+
+    if (hasComma || hasDot) {
+        const separatorIndex = Math.max(lastComma, lastDot);
+        const decimalPart = raw.slice(separatorIndex + 1).replace(/[.,]/g, "");
+        const integerPart = raw.slice(0, separatorIndex).replace(/[.,]/g, "") || "0";
+        const hasMixedSeparators = hasComma && hasDot;
+        const treatAsDecimal =
+            decimalPart.length > 0 &&
+            (hasMixedSeparators || decimalPart.length <= 2);
+
+        normalized = treatAsDecimal ? `${integerPart}.${decimalPart}` : `${integerPart}${decimalPart}`;
     }
 
-    const integerPart = raw.slice(0, separatorIndex).replace(/[.,]/g, "") || "0";
-    const decimalPart = raw.slice(separatorIndex + 1).replace(/[.,]/g, "").slice(0, 2);
-    return decimalPart.length > 0 ? `${integerPart},${decimalPart}` : `${integerPart},`;
-};
-
-const parsePriceDraft = (value = "") => {
-    const normalized = normalizePriceDraft(value);
-    if (!normalized) return 0;
-    const parsed = Number(normalized.replace(",", "."));
+    const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const formatEditablePrice = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return "";
-    return formatPrice(num);
+    if (Number.isInteger(num)) return String(num);
+    return String(num).replace(".", ",");
 };
 
 const buildBudgetMessage = ({
@@ -60,13 +68,13 @@ const buildBudgetMessage = ({
     const lines = items.map((item) => {
         const price = Number(prices[item.id] ?? 0);
         const mlSuffix = item.mlLabel ? ` ${item.mlLabel}` : "";
-        const currency = priceMode === PRICE_MODE_WHOLESALE ? "US$" : "$";
+        const currency = priceMode === PRICE_MODE_WHOLESALE ? "$" : "$";
         const totalLine = price > 0 ? ` - ${currency} ${formatPrice(price)}` : " - Consultar";
         return `- ${item.quantity}x ${item.name}${mlSuffix}${totalLine}`;
     });
 
     const total = items.reduce((acc, item) => acc + (Number(prices[item.id] ?? 0) * Number(item.quantity || 0)), 0);
-    const currency = priceMode === PRICE_MODE_WHOLESALE ? "US$" : "$";
+    const currency = priceMode === PRICE_MODE_WHOLESALE ? "$" : "$";
 
     return [
         greeting,
@@ -94,7 +102,27 @@ export default function AdminBudgetModal({
     const [customerName, setCustomerName] = useState("");
     const [phone, setPhone] = useState("");
     const [showPreview, setShowPreview] = useState(false);
+    const [manualItems, setManualItems] = useState([]);
+    const [showAddProduct, setShowAddProduct] = useState(false);
+    const [newProduct, setNewProduct] = useState({
+        name: "",
+        quantity: 1,
+        quantityMode: "1",
+        quantityDraft: "",
+        isEditingCustomQuantity: false,
+        ml: "",
+        priceDraft: "",
+    });
     const previewRef = useRef(null);
+    const emptyNewProduct = {
+        name: "",
+        quantity: 1,
+        quantityMode: "1",
+        quantityDraft: "",
+        isEditingCustomQuantity: false,
+        ml: "",
+        priceDraft: "",
+    };
 
     useEffect(() => {
         if (!open) return;
@@ -105,7 +133,10 @@ export default function AdminBudgetModal({
         setShowPreview(false);
         setEditingId(null);
         setEditingDraft("");
-    }, [open, items]);
+        setManualItems([]);
+        setShowAddProduct(false);
+        setNewProduct(emptyNewProduct);
+    }, [open]);
 
     useEffect(() => {
         if (!open) return;
@@ -114,17 +145,22 @@ export default function AdminBudgetModal({
         for (const item of items) {
             nextPrices[item.id] = getBasePrice(item, priceMode);
         }
+        for (const item of manualItems) {
+            nextPrices[item.id] = Number(prices[item.id] ?? 0);
+        }
         setPrices(nextPrices);
-    }, [items, open, priceMode]);
+    }, [items, manualItems, open, priceMode]);
+
+    const budgetItems = useMemo(() => [...items, ...manualItems], [items, manualItems]);
 
     const total = useMemo(
-        () => items.reduce((acc, item) => acc + (Number(prices[item.id] ?? 0) * Number(item.quantity || 0)), 0),
-        [items, prices]
+        () => budgetItems.reduce((acc, item) => acc + (Number(prices[item.id] ?? 0) * Number(item.quantity || 0)), 0),
+        [budgetItems, prices]
     );
 
     const messagePreview = useMemo(
-        () => buildBudgetMessage({ customerName, items, prices, priceMode }),
-        [customerName, items, prices, priceMode]
+        () => buildBudgetMessage({ customerName, items: budgetItems, prices, priceMode }),
+        [customerName, budgetItems, prices, priceMode]
     );
 
     useEffect(() => {
@@ -137,7 +173,61 @@ export default function AdminBudgetModal({
 
     if (!open) return null;
 
-    const canSend = items.length > 0 && customerName.trim() && normalizeDigits(phone).length >= 8;
+    const canSend = budgetItems.length > 0 && customerName.trim() && normalizeDigits(phone).length >= 8;
+
+    const applyCustomQuantity = () => {
+        const qty = Math.max(1, Number(newProduct.quantityDraft) || 1);
+        setNewProduct((prev) => ({
+            ...prev,
+            quantity: qty,
+            quantityMode: qty <= 10 ? String(qty) : CUSTOM_QTY_VALUE,
+            quantityDraft: String(qty),
+            isEditingCustomQuantity: false,
+        }));
+    };
+
+    const addManualProduct = () => {
+        const name = String(newProduct.name || "").trim();
+        if (!name) return;
+
+        const quantity = Math.max(1, Number(newProduct.quantity) || 1);
+        const mlValue = String(newProduct.ml || "").trim();
+        const unitPrice = parsePriceDraft(newProduct.priceDraft);
+        const id = `manual-${Date.now()}`;
+        const normalizedMlLabel = mlValue
+            ? (/\bml\b/i.test(mlValue) ? mlValue : `${mlValue} ML`)
+            : "Sin ML";
+
+        setManualItems((prev) => [
+            ...prev,
+            {
+                id,
+                name,
+                quantity,
+                ml: mlValue,
+                mlLabel: normalizedMlLabel,
+                retailPrice: unitPrice,
+                wholesalePrice: unitPrice,
+                isManual: true,
+            },
+        ]);
+        setPrices((prev) => ({ ...prev, [id]: unitPrice }));
+        setNewProduct(emptyNewProduct);
+        setShowAddProduct(false);
+    };
+
+    const removeBudgetItem = (itemId) => {
+        if (String(itemId).startsWith("manual-")) {
+            setManualItems((prev) => prev.filter((item) => item.id !== itemId));
+            setPrices((prev) => {
+                const next = { ...prev };
+                delete next[itemId];
+                return next;
+            });
+            return;
+        }
+        onRemoveItem(itemId);
+    };
 
     return (
         <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
@@ -159,11 +249,11 @@ export default function AdminBudgetModal({
                 </div>
 
                 <div className="p-5 space-y-5">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid gap-2 md:flex md:flex-wrap">
                         <button
                             type="button"
                             onClick={() => setPriceMode(PRICE_MODE_RETAIL)}
-                            className={`px-4 py-2 rounded-lg border ${priceMode === PRICE_MODE_RETAIL
+                            className={`w-full px-4 py-2 rounded-lg border md:w-auto ${priceMode === PRICE_MODE_RETAIL
                                 ? "bg-slate-900 text-white border-slate-900"
                                 : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                                 }`}
@@ -173,32 +263,168 @@ export default function AdminBudgetModal({
                         <button
                             type="button"
                             onClick={() => setPriceMode(PRICE_MODE_WHOLESALE)}
-                            className={`px-4 py-2 rounded-lg border ${priceMode === PRICE_MODE_WHOLESALE
+                            className={`w-full px-4 py-2 rounded-lg border md:w-auto ${priceMode === PRICE_MODE_WHOLESALE
                                 ? "bg-amber-600 text-white border-amber-600"
                                 : "bg-white text-amber-700 border-amber-300 hover:bg-amber-50"
                                 }`}
                         >
                             Presupuesto mayorista
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowAddProduct((prev) => !prev)}
+                            className="w-full px-4 py-2 rounded-lg border bg-white text-stone-700 border-stone-300 hover:bg-stone-50 md:w-auto"
+                        >
+                            Agregar producto
+                        </button>
                     </div>
 
+                    {showAddProduct && (
+                        <div className="border rounded-xl bg-stone-50 p-4">
+                            <div className="space-y-3">
+                                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_120px]">
+                                    <input
+                                        type="text"
+                                        value={newProduct.name}
+                                        onChange={(e) => setNewProduct((prev) => ({ ...prev, name: e.target.value }))}
+                                        className="w-full border rounded-lg px-3 py-2 bg-white"
+                                        placeholder="Nombre de producto"
+                                    />
+                                    <div className="space-y-2">
+                                        <select
+                                            value={newProduct.quantityMode}
+                                            onChange={(e) => {
+                                                const mode = e.target.value;
+                                                if (mode === CUSTOM_QTY_VALUE) {
+                                                    setNewProduct((prev) => ({
+                                                        ...prev,
+                                                        quantityMode: mode,
+                                                        quantityDraft: String(prev.quantity || 1),
+                                                        isEditingCustomQuantity: true,
+                                                    }));
+                                                    return;
+                                                }
+                                                const quantity = Math.max(1, Number(mode) || 1);
+                                                setNewProduct((prev) => ({
+                                                    ...prev,
+                                                    quantityMode: mode,
+                                                    quantity,
+                                                    quantityDraft: "",
+                                                    isEditingCustomQuantity: false,
+                                                }));
+                                            }}
+                                            className="w-full border rounded-lg px-3 py-2 bg-white"
+                                        >
+                                            {Array.from({ length: 10 }, (_, idx) => (
+                                                <option key={idx + 1} value={String(idx + 1)}>
+                                                    {idx + 1}
+                                                </option>
+                                            ))}
+                                            {newProduct.quantityMode === CUSTOM_QTY_VALUE && !newProduct.isEditingCustomQuantity && (
+                                                <option value={CUSTOM_QTY_VALUE}>{newProduct.quantity}</option>
+                                            )}
+                                            <option value={CUSTOM_QTY_VALUE}>Otra cantidad</option>
+                                        </select>
+                                        {newProduct.quantityMode === CUSTOM_QTY_VALUE && newProduct.isEditingCustomQuantity && (
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    step={1}
+                                                    inputMode="numeric"
+                                                    value={newProduct.quantityDraft}
+                                                    onChange={(e) => setNewProduct((prev) => ({ ...prev, quantityDraft: e.target.value }))}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault();
+                                                            applyCustomQuantity();
+                                                        }
+                                                    }}
+                                                    className="w-full border rounded-lg px-3 py-2 bg-white"
+                                                    placeholder="Cantidad"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={applyCustomQuantity}
+                                                    className="px-3 py-2 rounded-lg border border-stone-300 bg-white hover:bg-stone-100"
+                                                >
+                                                    OK
+                                                </button>
+                                            </div>
+                                        )}
+                                        {newProduct.quantityMode === CUSTOM_QTY_VALUE && !newProduct.isEditingCustomQuantity && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setNewProduct((prev) => ({
+                                                        ...prev,
+                                                        quantityDraft: String(prev.quantity || 1),
+                                                        isEditingCustomQuantity: true,
+                                                    }))
+                                                }
+                                                className="px-3 py-2 rounded-lg border border-stone-300 bg-white hover:bg-stone-100"
+                                            >
+                                                Editar
+                                            </button>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={newProduct.ml}
+                                        onChange={(e) => setNewProduct((prev) => ({ ...prev, ml: e.target.value }))}
+                                        className="w-full border rounded-lg px-3 py-2 bg-white"
+                                        placeholder="ML"
+                                    />
+                                </div>
+
+                                <div className="grid gap-3 md:grid-cols-[150px_auto_auto] md:justify-start">
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={newProduct.priceDraft}
+                                        onChange={(e) => setNewProduct((prev) => ({ ...prev, priceDraft: sanitizePriceDraft(e.target.value) }))}
+                                        className="w-full border rounded-lg px-3 py-2 bg-white"
+                                        placeholder="Precio unitario"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={addManualProduct}
+                                        className="px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                                    >
+                                        Confirmar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setNewProduct(emptyNewProduct);
+                                            setShowAddProduct(false);
+                                        }}
+                                        className="px-4 py-2 rounded-lg border border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="border rounded-xl overflow-hidden">
-                        <div className="grid grid-cols-[minmax(0,1fr)_150px] bg-stone-50 border-b text-xs font-semibold uppercase tracking-wide text-stone-500">
+                        <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_150px] bg-stone-50 border-b text-xs font-semibold uppercase tracking-wide text-stone-500">
                             <div className="px-4 py-3">Producto</div>
                             <div className="px-4 py-3 text-right">Precio</div>
                         </div>
 
-                        {items.map((item) => {
+                        {budgetItems.map((item) => {
                             const priceValue = Number(prices[item.id] ?? 0);
                             const isEditing = editingId === item.id;
-                            const currency = priceMode === PRICE_MODE_WHOLESALE ? "US$" : "$";
+                            const currency = priceMode === PRICE_MODE_WHOLESALE ? "$" : "$";
 
                             return (
                                 <div
                                     key={item.id}
-                                    className="grid grid-cols-[minmax(0,1fr)_150px] border-b last:border-b-0 items-center"
+                                    className="grid grid-cols-1 border-b last:border-b-0 md:grid-cols-[minmax(0,1fr)_150px] md:items-center"
                                 >
-                                    <div className="px-4 py-3">
+                                    <div className="px-4 pt-3 pb-2 md:py-3">
                                         <div className="font-medium text-stone-900">
                                             {item.quantity}x {item.name}
                                         </div>
@@ -207,15 +433,15 @@ export default function AdminBudgetModal({
                                         </div>
                                     </div>
 
-                                    <div className="px-4 py-3 text-right">
+                                    <div className="px-4 pb-3 pt-0 md:py-3 text-left md:text-right">
                                         {isEditing ? (
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center gap-2 md:justify-end">
                                                 <input
                                                     type="text"
                                                     inputMode="decimal"
                                                     autoFocus
                                                     value={editingDraft}
-                                                    onChange={(e) => setEditingDraft(normalizePriceDraft(e.target.value))}
+                                                    onChange={(e) => setEditingDraft(sanitizePriceDraft(e.target.value))}
                                                     onKeyDown={(e) => {
                                                         if (e.key === "Enter") {
                                                             setPrices((prev) => ({
@@ -248,8 +474,8 @@ export default function AdminBudgetModal({
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div className="flex items-center justify-end gap-2">
-                                                <span className="tabular-nums">
+                                            <div className="flex items-center gap-2 md:justify-end">
+                                                <span className="tabular-nums md:inline-flex md:items-center md:gap-1 md:whitespace-nowrap">
                                                     {currency} {formatPrice(priceValue)}
                                                 </span>
                                                 <button
@@ -266,7 +492,7 @@ export default function AdminBudgetModal({
                                                 <button
                                                     type="button"
                                                     className="px-2 py-1 border rounded hover:bg-red-50"
-                                                    onClick={() => onRemoveItem(item.id)}
+                                                    onClick={() => removeBudgetItem(item.id)}
                                                     title="Quitar del presupuesto"
                                                 >
                                                     🗑️
@@ -310,8 +536,8 @@ export default function AdminBudgetModal({
                     <div className="flex flex-wrap items-center justify-between gap-3 border rounded-xl bg-stone-50 px-4 py-3">
                         <div>
                             <div className="text-sm text-stone-500">Total estimado</div>
-                            <div className="text-lg font-semibold text-stone-900">
-                                {priceMode === PRICE_MODE_WHOLESALE ? "US$" : "$"} {formatPrice(total)}
+                            <div className="text-lg font-semibold text-stone-900 md:inline-flex md:items-center md:gap-1 md:whitespace-nowrap">
+                                {priceMode === PRICE_MODE_WHOLESALE ? "$" : "$"} {formatPrice(total)}
                             </div>
                         </div>
 

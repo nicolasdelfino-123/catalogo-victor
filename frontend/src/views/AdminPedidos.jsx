@@ -157,7 +157,7 @@ export default function AdminPedidos() {
 
                 // detectar mayorista: si los precios parecen mayoristas
                 const isWholesale = items.some(i => i.price && i.price < 1000);
-                const currency = isWholesale ? "US$" : "$";
+                const currency = isWholesale ? "$" : "$";
 
                 return (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

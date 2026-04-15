@@ -36,7 +36,7 @@ const writeGridState = (key, state) => {
 
 const getDefaultItemsPerPage = () => {
     if (typeof window === "undefined") return 24;
-    return window.innerWidth >= 768 ? 24 : 16;
+    return window.innerWidth >= 768 ? 24 : null;
 };
 
 const renderColumnsIcon = (cols, active) => {
@@ -135,7 +135,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
     const [currentPage, setCurrentPage] = useState(
         Number(searchParams.get("page")) || 1
     );
-    const [sortOrder, setSortOrder] = useState("default"); // default | price-asc | price-desc
+    const [sortOrder, setSortOrder] = useState("price-asc"); // default | price-asc | price-desc
     const [cardsPerRow, setCardsPerRow] = useState(4);
     const [mobileSortOpen, setMobileSortOpen] = useState(false);
 
@@ -203,7 +203,9 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
 
             const defaultItemsPerPage = getDefaultItemsPerPage();
             const restoredItemsPerPage =
-                saved.itemsPerPage == null
+                window.innerWidth < 768
+                    ? defaultItemsPerPage
+                    : saved.itemsPerPage == null
                     ? defaultItemsPerPage
                     : (window.innerWidth >= 768 && saved.itemsPerPage === 12
                         ? 24
@@ -219,7 +221,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
                 setCurrentPage(saved.currentPage ?? 1);
             }
 
-            setSortOrder(saved.sortOrder ?? "default");
+            setSortOrder(saved.sortOrder ?? "price-asc");
 
 
             restoredRef.current = true;
@@ -243,12 +245,15 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
         const lastId = sessionStorage.getItem("lastProductId");
         if (lastId) return;
 
+        setItemsPerPage(getDefaultItemsPerPage());
+
         const saved = readGridState(storageKey);
         if (!saved) {
             setSearchTerm("");
             setPriceRange({ min: 0, max: Infinity });
             setSelectedBrands([]);
             setSelectedMls([]);
+            setSortOrder("price-asc");
             setCurrentPage(1);
         }
     }, [slug, category, storageKey]);
@@ -388,9 +393,10 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
     // -----------------------------
     // Paginación
     // -----------------------------
-    const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
+    const totalPages = itemsPerPage ? Math.ceil(sortedProducts.length / itemsPerPage) : 1;
 
     const paginatedProducts = useMemo(() => {
+        if (!itemsPerPage) return sortedProducts;
         const start = (currentPage - 1) * itemsPerPage;
         return sortedProducts.slice(start, start + itemsPerPage);
     }, [sortedProducts, currentPage, itemsPerPage]);
@@ -505,8 +511,9 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
         setSearchTerm("");
         setSelectedBrands([]);
         setSelectedMls([]);
-        setSortOrder("default");
+        setSortOrder("price-asc");
         setPriceRange({ min: 0, max: Infinity });
+        setItemsPerPage(getDefaultItemsPerPage());
         setCurrentPage(1);
 
         skipNextPageResetRef.current = true;

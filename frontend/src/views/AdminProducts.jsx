@@ -7,6 +7,11 @@ import AdminBudgetToolbar from "../components/admin/AdminBudgetToolbar.jsx";
 import AdminBudgetSelectionCell from "../components/admin/AdminBudgetSelectionCell.jsx";
 import AdminBudgetModal from "../components/admin/AdminBudgetModal.jsx";
 import {
+    getBestSellerProductIds,
+    isBestSellerProduct,
+    setProductBestSellerStatus,
+} from "../utils/bestSellers.js";
+import {
     CATEGORY_ID_TO_NAME as ID_TO_CATEGORY_NAME,
     mapCategoryIdFromName,
     PERFUME_CATEGORY_DEFINITIONS,
@@ -410,6 +415,7 @@ const clearPricingInputs = (state) => ({
 export default function AdminProducts() {
     const [products, setProducts] = useState([])
     const categories = PERFUME_CATEGORY_NAMES
+    const [bestSellerIds, setBestSellerIds] = useState(() => getBestSellerProductIds())
     const [form, setForm] = useState(null)
     const [q, setQ] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("Todos")
@@ -473,7 +479,15 @@ export default function AdminProducts() {
             })
             if (res.ok) {
                 const data = await res.json()
-                setProducts(data || [])
+                const storedIds = getBestSellerProductIds()
+                const storedIdSet = new Set(storedIds)
+                setBestSellerIds(storedIds)
+                setProducts(
+                    (data || []).map((product) => ({
+                        ...product,
+                        is_best_seller: isBestSellerProduct(product, storedIdSet),
+                    }))
+                )
             }
         } catch (error) {
             console.error("Error fetching products:", error)
@@ -872,7 +886,7 @@ export default function AdminProducts() {
                 if (u.startsWith("/")) return normalizeImagePath(u); // relativo válido → normaliza /public
                 return "";                                     // invalida textos sueltos (evita 404 /frutal)
             })();
-            const { image_urls, volume_stock, ...cleanForm } = form;
+            const { image_urls, volume_stock, is_best_seller, ...cleanForm } = form;
             const allVolumeOptions = normalizeVolumeOptions(form.volume_options || [], { keepWithoutMl: true });
             const fallbackRetail = Number(
                 allVolumeOptions.find((row) => Number(row?.price) > 0)?.price
@@ -928,6 +942,10 @@ export default function AdminProducts() {
                 alert(`Error: ${json.error || "No se pudo guardar el producto"}`);
                 return;
             }
+
+            const persistedProductId = Number(form.id || json?.product?.id);
+            const nextBestSellerIds = setProductBestSellerStatus(persistedProductId, Boolean(is_best_seller));
+            setBestSellerIds(nextBestSellerIds);
 
             // ✅ Si es creación, ATAMOS las imágenes subidas antes de tener id
             if (!form.id) {
@@ -1107,7 +1125,9 @@ export default function AdminProducts() {
 
         const matchesCategory =
             selectedCategory === "Todos" ||
-            normalizeCategoryLabel(ID_TO_CATEGORY_NAME[p.category_id]) === normalizeCategoryLabel(selectedCategory); // 👈
+            (normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Más Vendidos")
+                ? isBestSellerProduct(p, bestSellerIds)
+                : normalizeCategoryLabel(ID_TO_CATEGORY_NAME[p.category_id]) === normalizeCategoryLabel(selectedCategory));
 
         const isActive = Boolean(p?.is_active);
         const matchesStatus =
@@ -1280,6 +1300,7 @@ export default function AdminProducts() {
                     onClick={() => setForm({
                         category_id: 1,
                         is_active: true,
+                        is_best_seller: false,
 
                         image_url: "",
                         image_urls: [],
@@ -1351,7 +1372,8 @@ export default function AdminProducts() {
                                         stock: it.stock || 0,
                                         image_url: it.image_url || "",
                                         category_id: catId,
-                                        category_name: ID_TO_CATEGORY_NAME[catId] || "Más Vendidos",
+                                        category_name: ID_TO_CATEGORY_NAME[catId] || "Fragancias Masculinas",
+                                        is_best_seller: false,
                                         flavor_enabled: catalog.length > 0,
                                         flavor_catalog: catalog, // ✅ catálogo completo para edición
                                         flavors: catalog.map((x) => x.name), // ✅ todos los sabores como activos por defecto
@@ -1437,6 +1459,7 @@ export default function AdminProducts() {
 
                             <th className="hidden p-2 md:table-cell">Stock</th>
                             <th className="hidden p-2 md:table-cell">Categoría</th>
+                            <th className="hidden p-2 text-center md:table-cell">Más vendidos</th>
                             {/*  <th className="p-2">Sabores</th> */}
                             <th className="hidden p-2 md:table-cell">Estado</th>
                             <th className="p-2"></th>
@@ -1654,6 +1677,23 @@ export default function AdminProducts() {
                                         </td>
                                         <td className="hidden p-2 text-center md:table-cell">{ID_TO_CATEGORY_NAME[p.category_id]}</td>
                                         <td className="hidden p-2 text-center md:table-cell">
+                                            <input
+                                                type="checkbox"
+                                                checked={Boolean(isBestSellerProduct(p, bestSellerIds))}
+                                                onChange={(e) => {
+                                                    const nextIds = setProductBestSellerStatus(p.id, e.target.checked);
+                                                    const nextIdSet = new Set(nextIds);
+                                                    setBestSellerIds(nextIds);
+                                                    setProducts((prev) =>
+                                                        prev.map((prod) => ({
+                                                            ...prod,
+                                                            is_best_seller: isBestSellerProduct(prod, nextIdSet),
+                                                        }))
+                                                    );
+                                                }}
+                                            />
+                                        </td>
+                                        <td className="hidden p-2 text-center md:table-cell">
                                             {/* Toggle visual Estado con aviso solo en filtro activos/inactivos */}
                                             <button
                                                 type="button"
@@ -1793,6 +1833,7 @@ export default function AdminProducts() {
                                                     setForm({
                                                         ...p,
                                                         category_id: p.category_id,
+                                                        is_best_seller: Boolean(isBestSellerProduct(p, bestSellerIds)),
                                                         price: "",
                                                         price_wholesale: "",
                                                         volume_ml: "",
@@ -1855,6 +1896,26 @@ export default function AdminProducts() {
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Categoria</div>
                                                         <div className="mt-1">{ID_TO_CATEGORY_NAME[p.category_id]}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs uppercase tracking-wide text-gray-500">Más vendidos</div>
+                                                        <div className="mt-1">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={Boolean(isBestSellerProduct(p, bestSellerIds))}
+                                                                onChange={(e) => {
+                                                                    const nextIds = setProductBestSellerStatus(p.id, e.target.checked);
+                                                                    const nextIdSet = new Set(nextIds);
+                                                                    setBestSellerIds(nextIds);
+                                                                    setProducts((prev) =>
+                                                                        prev.map((prod) => ({
+                                                                            ...prod,
+                                                                            is_best_seller: isBestSellerProduct(prod, nextIdSet),
+                                                                        }))
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </div>
                                                     </div>
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Desc. corta</div>
@@ -2498,15 +2559,16 @@ export default function AdminProducts() {
                                 setForm({
                                     ...form,
                                     category_id: categoryId,
-                                    category_name: ID_TO_CATEGORY_NAME[categoryId] || "Más Vendidos",
+                                    category_name: ID_TO_CATEGORY_NAME[categoryId] || "Fragancias Masculinas",
                                     flavor_enabled: show,
+                                    is_best_seller: Boolean(form.is_best_seller),
                                     flavors: show ? form.flavors || [] : [],
                                 })
                             }}
                             required
                         >
                             <option value="">Selecciona categoría</option>
-                            {PERFUME_CATEGORY_DEFINITIONS.map((category) => (
+                            {PERFUME_CATEGORY_DEFINITIONS.filter((category) => category.slug !== "mas-vendidos").map((category) => (
                                 <option key={category.id} value={category.id}>
                                     {category.name}
                                 </option>
@@ -2522,6 +2584,15 @@ export default function AdminProducts() {
                                 onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                             />
                             Producto activo
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={form.is_best_seller ?? false}
+                                onChange={(e) => setForm({ ...form, is_best_seller: e.target.checked })}
+                            />
+                            Más Vendidos
                         </label>
 
                         <div className="flex gap-2 justify-end">

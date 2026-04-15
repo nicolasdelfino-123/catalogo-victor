@@ -47,10 +47,10 @@ export default function InicioNuevo() {
         return Number.isFinite(price) ? price : Number.POSITIVE_INFINITY;
     };
     const isWomenFragrance = (product) =>
-        Number(product?.category_id) === 3 ||
+        Number(product?.category_id) === 2 ||
         /mujer|femen/i.test(String(product?.category_name || ""));
     const isMenFragrance = (product) =>
-        Number(product?.category_id) === 2 ||
+        Number(product?.category_id) === 1 ||
         /hombre|masculin/i.test(String(product?.category_name || ""));
 
     const womenFeatured = allProducts

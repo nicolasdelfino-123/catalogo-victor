@@ -1,11 +1,11 @@
 export const PERFUME_CATEGORY_DEFINITIONS = [
-    { id: 1, name: "Más Vendidos", slug: "mas-vendidos" },
-    { id: 2, name: "Fragancias Masculinas", slug: "fragancias-masculinas" },
-    { id: 3, name: "Fragancias Femeninas", slug: "fragancias-femeninas" },
-    { id: 4, name: "Fragancias Unisex", slug: "fragancias-unisex" },
-    { id: 5, name: "Perfumes Árabes", slug: "perfumes-arabes" },
-    { id: 6, name: "Perfumes de Diseñador", slug: "perfumes-de-disenador" },
-    { id: 7, name: "Perfumes de Nicho", slug: "perfumes-de-nicho" },
+    { id: 0, name: "Más Vendidos", slug: "mas-vendidos" },
+    { id: 1, name: "Fragancias Masculinas", slug: "fragancias-masculinas" },
+    { id: 2, name: "Fragancias Femeninas", slug: "fragancias-femeninas" },
+    { id: 3, name: "Fragancias Unisex", slug: "fragancias-unisex" },
+    { id: 4, name: "Perfumes Árabes", slug: "perfumes-arabes" },
+    { id: 5, name: "Perfumes de Diseñador", slug: "perfumes-de-disenador" },
+    { id: 6, name: "Perfumes de Nicho", slug: "perfumes-de-nicho" },
 ];
 
 export const PERFUME_CATEGORY_NAMES = PERFUME_CATEGORY_DEFINITIONS.map((category) => category.name);
@@ -16,23 +16,23 @@ export const CATEGORY_ID_TO_NAME = PERFUME_CATEGORY_DEFINITIONS.reduce(
 );
 
 export const CATEGORY_NAME_TO_ID = {
-    "Más Vendidos": 1,
-    "Mas Vendidos": 1,
-    "Fragancias Masculinas": 2,
-    "Fragancias de Hombre": 2,
-    Masculinos: 2,
-    "Perfumes masculinos": 2,
-    "Perfumes Masculinos": 2,
-    "Fragancias Femeninas": 3,
-    "Fragancias de Mujer": 3,
-    Femeninos: 3,
-    "Fragancias Unisex": 4,
-    Unisex: 4,
-    "Perfumes Árabes": 5,
-    "Perfumes Arabes": 5,
-    "Perfumes de Diseñador": 6,
-    "Perfumes de Disenador": 6,
-    "Perfumes de Nicho": 7,
+    "Más Vendidos": 0,
+    "Mas Vendidos": 0,
+    "Fragancias Masculinas": 1,
+    "Fragancias de Hombre": 1,
+    Masculinos: 1,
+    "Perfumes masculinos": 1,
+    "Perfumes Masculinos": 1,
+    "Fragancias Femeninas": 2,
+    "Fragancias de Mujer": 2,
+    Femeninos: 2,
+    "Fragancias Unisex": 3,
+    Unisex: 3,
+    "Perfumes Árabes": 4,
+    "Perfumes Arabes": 4,
+    "Perfumes de Diseñador": 5,
+    "Perfumes de Disenador": 5,
+    "Perfumes de Nicho": 6,
 };
 
 export const LEGACY_CATEGORY_NAME_TO_CURRENT = {
@@ -42,7 +42,7 @@ export const LEGACY_CATEGORY_NAME_TO_CURRENT = {
     Masculinos: "Fragancias Masculinas",
     Femeninos: "Fragancias Femeninas",
     Unisex: "Fragancias Unisex",
-    "Vapes Desechables": "Más Vendidos",
+    "Vapes Desechables": "Fragancias Masculinas",
     "Pods Recargables": "Fragancias Masculinas",
     "Líquidos": "Fragancias Femeninas",
     Resistencias: "Fragancias Unisex",
@@ -59,7 +59,7 @@ export const SLUG_TO_NAME = PERFUME_CATEGORY_DEFINITIONS.reduce(
         "perfumes-masculinos": "Fragancias Masculinas",
         femeninos: "Fragancias Femeninas",
         unisex: "Fragancias Unisex",
-        "vapes-desechables": "Más Vendidos",
+        "vapes-desechables": "Fragancias Masculinas",
         "pods-recargables": "Fragancias Masculinas",
         liquidos: "Fragancias Femeninas",
         resistencias: "Fragancias Unisex",
@@ -71,15 +71,15 @@ export const SLUG_TO_NAME = PERFUME_CATEGORY_DEFINITIONS.reduce(
 export const SLUG_TO_ID = PERFUME_CATEGORY_DEFINITIONS.reduce(
     (acc, category) => ({ ...acc, [category.slug]: category.id }),
     {
-        "perfumes-masculinos": 2,
-        femeninos: 3,
-        unisex: 4,
+        "perfumes-masculinos": 1,
+        femeninos: 2,
+        unisex: 3,
         "vapes-desechables": 1,
-        "pods-recargables": 2,
-        liquidos: 3,
-        resistencias: 4,
-        celulares: 5,
-        perfumes: 6,
+        "pods-recargables": 1,
+        liquidos: 2,
+        resistencias: 3,
+        celulares: 4,
+        perfumes: 5,
     }
 );
 
@@ -119,15 +119,15 @@ export const mapCategoryIdFromName = (value = "") => {
         .replace(/[\u0300-\u036f]/g, "");
 
     if (normalized.includes("mas vendido")) return 1;
-    if (normalized.includes("mascul")) return 2;
-    if (normalized.includes("hombre")) return 2;
-    if (normalized.includes("femen")) return 3;
-    if (normalized.includes("mujer")) return 3;
-    if (normalized.includes("unisex")) return 4;
-    if (normalized.includes("arab")) return 5;
-    if (normalized.includes("disen")) return 6;
-    if (normalized.includes("nicho")) return 7;
-    if (normalized.includes("perfume")) return 5;
+    if (normalized.includes("mascul")) return 1;
+    if (normalized.includes("hombre")) return 1;
+    if (normalized.includes("femen")) return 2;
+    if (normalized.includes("mujer")) return 2;
+    if (normalized.includes("unisex")) return 3;
+    if (normalized.includes("arab")) return 4;
+    if (normalized.includes("disen")) return 5;
+    if (normalized.includes("nicho")) return 6;
+    if (normalized.includes("perfume")) return 4;
     return 1;
 };
 

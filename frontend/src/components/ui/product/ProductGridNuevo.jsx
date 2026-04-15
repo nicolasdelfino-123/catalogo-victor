@@ -9,6 +9,7 @@ import ProductCardPerfumes from "../cards//ProductCardPerfumes.jsx";        // o
 import SidebarFiltersNuevo from "./SidebarFiltersNuevo.jsx";     // o "./SidebarFilterNuevo.jsx" cuando lo refactoricemos
 import Modal from "../../Modal.jsx";
 import { ChevronRight, ChevronLeft, ArrowUpDown } from "lucide-react";
+import { isBestSellerProduct } from "../../../utils/bestSellers.js";
 import { withWholesale } from "../../../utils/wholesaleMode.js";
 import { SLUG_TO_ID, SLUG_TO_NAME } from "../../../utils/perfumeCategories.js";
 
@@ -266,6 +267,11 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
 
         // Home / destacados
         if (hideFilters && !currentCategoryId) return products.slice(0, 12);
+
+        // Más vendidos: categoría existente alimentada por el check del admin
+        if (currentSlug === "mas-vendidos") {
+            return products.filter((p) => isBestSellerProduct(p));
+        }
 
         // Todos
         if (!currentCategoryId) return products;

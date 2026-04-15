@@ -5,6 +5,7 @@ import ProductCard from "./ProductCard.jsx"
 import SidebarFilters from "./SidebarFilters"
 import Modal from "./Modal.jsx"
 import { ChevronRight, ChevronLeft } from "lucide-react"
+import { isBestSellerProduct } from "../utils/bestSellers.js";
 import { withWholesale } from "../utils/navigation";
 import { SLUG_TO_ID, SLUG_TO_NAME } from "../utils/perfumeCategories.js";
 
@@ -130,6 +131,7 @@ export default function ProductGrid({ category, hideFilters = false }) {
 
   const categoryProducts = useMemo(() => {
     const products = store.products || [];
+    if (currentSlug === "mas-vendidos") return products.filter((p) => isBestSellerProduct(p));
     if (hideFilters && !currentCategoryId) return products.slice(0, 12);
     if (!currentCategoryId) return products;
     return products.filter(p => Number(p.category_id) === Number(currentCategoryId));

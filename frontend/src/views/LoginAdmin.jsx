@@ -37,7 +37,7 @@ export default function LoginAdmin() {
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="bg-white rounded-lg shadow-md w-96">
                 {/* Tabs */}
-                <div className="flex border-b">
+                {/*  <div className="flex border-b">
                     <button
                         onClick={() => {
                             setActiveTab("login")
@@ -62,7 +62,7 @@ export default function LoginAdmin() {
                     >
                         Cambiar Contraseña
                     </button>
-                </div>
+                </div> */}
 
                 {/* Contenido */}
                 <div className="p-6">

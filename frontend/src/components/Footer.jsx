@@ -50,7 +50,7 @@ const Footer = () => {
                             </ul>
                         </div>
 
-                        <div>
+                        {/*   <div>
                             <h4 className="font-semibold mb-4 uppercase tracking-wider text-sm text-gray-200">Información</h4>
                             <ul className="space-y-2 text-gray-400">
                                 <li>
@@ -77,7 +77,7 @@ const Footer = () => {
 
                             </ul>
                         </div>
-
+ */}
                         <div>
                             <h4 className="font-semibold mb-4 uppercase tracking-wider text-sm text-gray-200">Contacto</h4>
                             <ul className="space-y-2 text-gray-300">

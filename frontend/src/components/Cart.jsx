@@ -43,7 +43,7 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
     const saved = localStorage.getItem("customerData");
     return saved
       ? JSON.parse(saved)
-      : { name: "", zone: "", payment: "" };
+      : { name: "", zone: "", payment: "", coupon: "" };
   });
 
   const navigate = useNavigate();
@@ -170,17 +170,17 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
 
     localStorage.setItem("customerData", JSON.stringify(customerData));
 
-    const phone = "5493512479800";
+    const phone = "5493534793366"; // ⚠️ CAMBIAR POR EL NÚMERO DEL VENDEDOR
 
     const orderText = buildWhatsAppMessage();
 
     const extraData = `
-
 Datos del cliente:
 
 Nombre: ${customerData.name}
 Localidad / Zona: ${customerData.zone}
 Pago: ${customerData.payment}
+${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
 
 `;
 
@@ -600,6 +600,20 @@ Pago: ${customerData.payment}
                   );
                 })}
 
+              </div>
+              <div className="mb-4 mt-3">
+                <p className="text-sm font-serif tracking-wide mb-2 text-gray-800">
+                  ¿Tenés cupón?
+                </p>
+
+                <input
+                  type="text"
+                  name="coupon"
+                  placeholder="Ingresá tu código"
+                  value={customerData.coupon}
+                  onChange={handleCustomerChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-serif tracking-wide focus:outline-none focus:border-gray-900"
+                />
               </div>
             </div>
             <p className="text-sm text-gray-500 font-serif tracking-wide mt-3 mb-5 text-center">

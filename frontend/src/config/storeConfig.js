@@ -1,5 +1,5 @@
 export const storeConfig = {
-    storeName: "Attar Perfumes",
+    storeName: "VJ Parfum & Decants",
 
     branding: {
         heroTitle: "Fragancias Árabes Originales",
@@ -14,25 +14,25 @@ export const storeConfig = {
     },
 
     contact: {
-        whatsapp: "5493512479800",
+        whatsapp: "5493765031782",
         whatsappMessage: "Hola, quiero consultar por un perfume del catálogo",
-        whatsappDisplay: "+54 9 351 247-9800",
+        whatsappDisplay: "+54 9 376 503-1782",
 
-        instagram: "https://www.instagram.com/attarperfumesarabes/",
-        instagramDisplay: "@attarperfumesarabes",
+        instagram: "https://www.instagram.com/vjparfum.decants/",
+        instagramDisplay: "@vjparfum.decants",
 
         email: "nicolasdelfino585@gmail.com",
         /*  emailDisplay: "nicolasdelfino585@gmail.com", */
     },
 
     business: {
-        address: "Córdoba Capital, Zona Ruta 20",
-        hours: "Horarios: 9:00–21:00",
+        address: "Posadas Misiones, Argentina",
+        hours: "Horarios: 7:00–22:00",
     },
 
     media: {
         heroImage: "portada_si.jpeg",
-        footerLogo: "logo_attar_2_si.jpeg",
+        footerLogo: "logo_victor_si.png",
     },
 
     map: {

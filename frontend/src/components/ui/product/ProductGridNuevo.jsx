@@ -151,6 +151,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
 
     const currentSlug = slug;
     const currentCategoryId = currentSlug ? SLUG_TO_ID[currentSlug] : null;
+    const hasCurrentCategory = currentSlug ? Object.prototype.hasOwnProperty.call(SLUG_TO_ID, currentSlug) : false;
 
     const searchTerm = store.productSearch || "";
     const setSearchTerm = (val) => actions.searchProducts(val);
@@ -266,7 +267,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
         const products = store.products || [];
 
         // Home / destacados
-        if (hideFilters && !currentCategoryId) return products.slice(0, 12);
+        if (hideFilters && !hasCurrentCategory) return products.slice(0, 12);
 
         // Más vendidos: categoría existente alimentada por el check del admin
         if (currentSlug === "mas-vendidos") {
@@ -274,13 +275,13 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
         }
 
         // Todos
-        if (!currentCategoryId) return products;
+        if (!hasCurrentCategory) return products;
 
         // Categoría actual
         return products.filter(
             (p) => Number(p.category_id) === Number(currentCategoryId)
         );
-    }, [store.products, currentCategoryId, slug, category, hideFilters]);
+    }, [store.products, currentCategoryId, slug, category, hideFilters, hasCurrentCategory]);
 
     // -----------------------------
     // Opciones de filtros
@@ -500,7 +501,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
         }
     };
 
-    const pageTitle = currentCategoryId
+    const pageTitle = hasCurrentCategory
         ? SLUG_TO_NAME?.[currentSlug] || "Todos los Productos"
         : category || "Todos los Productos";
 
@@ -591,7 +592,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
                         Inicio
                     </Link>
 
-                    {currentCategoryId && (
+                    {hasCurrentCategory && (
                         <>
                             <ChevronRight size={16} className="mx-2" />
                             <span className="font-serif text-[#232325] font-semibold">{pageTitle}</span>

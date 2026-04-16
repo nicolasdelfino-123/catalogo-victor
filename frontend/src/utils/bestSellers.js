@@ -42,11 +42,26 @@ export const setProductBestSellerStatus = (productId, checked) => {
     return saveBestSellerProductIds(Array.from(current));
 };
 
+const toBoolean = (value) => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value === 1;
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "si";
+    }
+    return false;
+};
+
 export const isBestSellerProduct = (product, idsOrSet = null) => {
     const productId = Number(product?.id);
     if (!Number.isFinite(productId) || productId <= 0) return false;
     if (idsOrSet instanceof Set) return idsOrSet.has(productId);
+    if (Array.isArray(idsOrSet)) return idsOrSet.includes(productId);
 
-    const ids = Array.isArray(idsOrSet) ? idsOrSet : getBestSellerProductIds();
+    if (product && Object.prototype.hasOwnProperty.call(product, "is_best_seller")) {
+        return toBoolean(product?.is_best_seller);
+    }
+
+    const ids = getBestSellerProductIds();
     return ids.includes(productId);
 };

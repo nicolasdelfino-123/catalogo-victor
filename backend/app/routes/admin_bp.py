@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models import Product, Category, User,ProductImage,now_cba_naive
+from app.best_sellers_store import set_best_seller_status
 from flask import current_app, send_from_directory, url_for
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps # pip install pillow
@@ -218,6 +219,8 @@ def create_product():
         )
         db.session.add(product)
         db.session.commit()
+        if 'is_best_seller' in data:
+            set_best_seller_status(product.id, bool(data.get('is_best_seller')))
         return jsonify({'message': 'Producto creado exitosamente', 'product': product.serialize()}), 201
 
     except Exception as e:
@@ -260,6 +263,8 @@ def update_product(product_id):
             product.category_id = safe_category.id
         if 'is_active' in data:
             product.is_active = bool(data['is_active'])
+        if 'is_best_seller' in data:
+            set_best_seller_status(product.id, bool(data.get('is_best_seller')))
             # 👇 NUEVO: puffs (caladas)
         if 'puffs' in data:
             v = str(data.get('puffs','')).strip()
@@ -342,6 +347,7 @@ def delete_product(product_id):
         if hard:
             # Con ON DELETE CASCADE, al borrar el product se borran sus imágenes
             db.session.delete(product)
+            set_best_seller_status(product.id, False)
         else:
             product.is_active = False  # comportamiento anterior (soft delete)
 

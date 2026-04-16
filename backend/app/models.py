@@ -114,6 +114,7 @@ class Product(db.Model):
 
   
     def serialize(self):
+        from app.best_sellers_store import is_best_seller_product_id
         # Armar lista de URLs de imágenes (principal + asociadas)
         image_urls = []
         if self.image_url:
@@ -157,6 +158,7 @@ class Product(db.Model):
             'category_id': self.category_id,
             'category_name': self.category.name if self.category else None,
             'is_active': self.is_active,
+            'is_best_seller': is_best_seller_product_id(self.id),
             'flavors': self.flavors or [],
             'flavor_enabled': self.flavor_enabled,
             'flavor_catalog': self.flavor_catalog or [],

@@ -9,6 +9,7 @@ import AdminBudgetModal from "../components/admin/AdminBudgetModal.jsx";
 import {
     getBestSellerProductIds,
     isBestSellerProduct,
+    saveBestSellerProductIds,
     setProductBestSellerStatus,
 } from "../utils/bestSellers.js";
 import {
@@ -479,7 +480,11 @@ export default function AdminProducts() {
             })
             if (res.ok) {
                 const data = await res.json()
-                const storedIds = getBestSellerProductIds()
+                const backendIds = (data || [])
+                    .filter((product) => Boolean(product?.is_best_seller))
+                    .map((product) => Number(product?.id))
+                    .filter((id) => Number.isFinite(id) && id > 0)
+                const storedIds = saveBestSellerProductIds(backendIds)
                 const storedIdSet = new Set(storedIds)
                 setBestSellerIds(storedIds)
                 setProducts(
@@ -493,6 +498,38 @@ export default function AdminProducts() {
             console.error("Error fetching products:", error)
         }
     }
+
+    const handleBestSellerToggle = async (productId, checked) => {
+        try {
+            const res = await fetch(`${API}/admin/products/${productId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ is_best_seller: Boolean(checked) }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                alert(`No se pudo actualizar "Más Vendidos": ${data?.error || res.statusText}`);
+                return;
+            }
+
+            const nextIds = setProductBestSellerStatus(productId, checked);
+            const nextIdSet = new Set(nextIds);
+            setBestSellerIds(nextIds);
+            setProducts((prev) =>
+                prev.map((prod) => ({
+                    ...prod,
+                    is_best_seller: isBestSellerProduct(prod, nextIdSet),
+                }))
+            );
+        } catch (error) {
+            console.error("Error updating best seller status:", error);
+            alert("No se pudo actualizar \"Más Vendidos\".");
+        }
+    };
 
     useEffect(() => {
         fetchAll()
@@ -905,6 +942,7 @@ export default function AdminProducts() {
             const directWholesale = parseFlexibleDecimal(form.price_wholesale);
             const payload = {
                 ...cleanForm,
+                is_best_seller: Boolean(is_best_seller),
                 price:
                     Number.isFinite(directRetail) && directRetail > 0
                         ? directRetail
@@ -1680,17 +1718,7 @@ export default function AdminProducts() {
                                             <input
                                                 type="checkbox"
                                                 checked={Boolean(isBestSellerProduct(p, bestSellerIds))}
-                                                onChange={(e) => {
-                                                    const nextIds = setProductBestSellerStatus(p.id, e.target.checked);
-                                                    const nextIdSet = new Set(nextIds);
-                                                    setBestSellerIds(nextIds);
-                                                    setProducts((prev) =>
-                                                        prev.map((prod) => ({
-                                                            ...prod,
-                                                            is_best_seller: isBestSellerProduct(prod, nextIdSet),
-                                                        }))
-                                                    );
-                                                }}
+                                                onChange={(e) => handleBestSellerToggle(p.id, e.target.checked)}
                                             />
                                         </td>
                                         <td className="hidden p-2 text-center md:table-cell">
@@ -1903,17 +1931,7 @@ export default function AdminProducts() {
                                                             <input
                                                                 type="checkbox"
                                                                 checked={Boolean(isBestSellerProduct(p, bestSellerIds))}
-                                                                onChange={(e) => {
-                                                                    const nextIds = setProductBestSellerStatus(p.id, e.target.checked);
-                                                                    const nextIdSet = new Set(nextIds);
-                                                                    setBestSellerIds(nextIds);
-                                                                    setProducts((prev) =>
-                                                                        prev.map((prod) => ({
-                                                                            ...prod,
-                                                                            is_best_seller: isBestSellerProduct(prod, nextIdSet),
-                                                                        }))
-                                                                    );
-                                                                }}
+                                                                onChange={(e) => handleBestSellerToggle(p.id, e.target.checked)}
                                                             />
                                                         </div>
                                                     </div>

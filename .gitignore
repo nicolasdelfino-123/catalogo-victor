@@ -191,6 +191,10 @@ backend/.env.*
 # No versionar datos subidos ni entornos locales
 backend/uploads/
 backend/venv/
+backend/data/*
+!backend/data/.gitkeep
+data/*
+!data/.gitkeep
 
 # Logs y temporales
 *.log

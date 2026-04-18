@@ -2,8 +2,8 @@ export const storeConfig = {
     storeName: "VJ Parfum & Decants",
 
     branding: {
-        heroTitle: "Fragancias Árabes Originales",
-        heroSubtitle: "Contamos con stock y variedad permanente",
+        heroTitle: "Decants de perfumes árabes, diseñador y nicho 100% auténticos",
+        heroSubtitle: "· Lujo al alcance de todos ·",
         /*       footerText: "Perfumes árabes originales en Argentina.", */
     },
 
@@ -31,7 +31,7 @@ export const storeConfig = {
     },
 
     media: {
-        heroImage: "portada_si.jpeg",
+        heroImage: "prueba_1_1600_600.png",
         footerLogo: "logo_victor_si.png",
     },
 

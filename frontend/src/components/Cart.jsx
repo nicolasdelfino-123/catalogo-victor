@@ -576,7 +576,7 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
               <p className="text-sm font-serif tracking-wide mb-3 text-gray-800">Forma de pago</p>
 
               <div className="space-y-2 text-sm">
-                {["Transferencia", "Efectivo", "Coordinar"].map(method => {
+                {["Envío dentro de Posadas", "Envío fuera de Posadas", "Retiro en puerta"].map(method => {
                   const selected = customerData.payment === method;
 
                   return (

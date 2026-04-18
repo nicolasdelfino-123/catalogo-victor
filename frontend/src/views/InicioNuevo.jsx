@@ -98,34 +98,68 @@ export default function InicioNuevo() {
 
 
             {/* HERO PREMIUM CON IMAGEN IMPORTADA */}
-            <section className="relative h-[400px] sm:h-[420px] md:h-[75vh] flex items-center justify-center text-center overflow-hidden bg-[#0B0608]">
+            <section className="
+relative
+
+h-[400px]        /* MOBILE */
+sm:h-[550px]     /* TABLET */
+md:h-[650px]     /* LAPTOP */
+lg:h-[700px]     /* DESKTOP */
+
+flex items-center justify-center text-center overflow-hidden bg-[#0B0608]
+">
 
                 {/* Fondo con tu imagen */}
                 <div
-                    className="
-  absolute inset-0
-  bg-no-repeat
+                    className={`
+    absolute inset-0
+    bg-no-repeat
 
-  /* ================= MOBILE ================= */
+    /* ============================================
+       📱 MOBILE (base, < 640px)
+       ============================================ */
+    bg-[length:700px_auto]     
+    bg-[position:center_5px]     
 
-  bg-[length:170%_auto]      /* ZOOM MOBILE (100% = normal, 120% = zoom, 90% = más chica) */
-  bg-[center_top_1px]      /* POSICION VERTICAL MOBILE (- sube, + baja) */
+    /* ============================================
+       📱 SMALL TABLET (sm: ≥ 640px)
+       ============================================ */
+    sm:bg-[length:1400px_auto]    /* ↔ Ancho imagen small tablet */
+    sm:bg-[position:center_50px] 
 
-  /* ================= DESKTOP ================= */
+    /* ============================================
+       💻 TABLET / LAPTOP (md: ≥ 768px)
+       ============================================ */
+    md:bg-[length:1600px_auto]    /* ↔ Ancho imagen tablet/laptop */
+    md:bg-[position:center_-150px]/* ↕ Posición vertical tablet/laptop */
 
-  sm:bg-cover                /* DESKTOP llena todo el contenedor */
-  sm:bg-center               /* DESKTOP centrada */
-  md:bg-[center_top_-2px]   /* POSICION VERTICAL DESKTOP */
+    /* ============================================
+       🖥 DESKTOP (lg: ≥ 1024px)
+       ============================================ */
+    lg:bg-[length:2000px_auto]    /* ↔ Ancho imagen desktop */
+    lg:bg-[position:center_-250px]/* ↕ Posición vertical desktop */
 
-  /* ================= EFECTOS ================= */
+    /* ============================================
+       🖥 DESKTOP XL (xl: ≥ 1280px)
+       ============================================ */
+    xl:bg-[length:1200px_auto]    /* ↔ Ancho imagen desktop xl */
+    xl:bg-[position:center_-300px]/* ↕ Posición vertical desktop xl */
 
-  animate-zoomSlow
-  brightness-110
-  saturate-110
-  "
+    /* ============================================
+       🖥 DESKTOP 2XL (2xl: ≥ 1536px)
+       ============================================ */
+    2xl:bg-[length:1550px_auto]   /* ↔ Ancho imagen 2xl */
+    2xl:bg-[position:center_0px]
+
+    /* ============================================
+       ✨ EFECTOS (no tocar salvo que quieras cambiar el look)
+       ============================================ */
+    animate-zoomSlow
+    brightness-110
+    saturate-110
+  `}
                     style={{ backgroundImage: `url(${banner})` }}
                 />
-
                 {/* Overlay oscuro elegante */}
 
                 <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/0 to-black/40" />
@@ -134,9 +168,9 @@ export default function InicioNuevo() {
                 <div className="
 relative z-10 px-6 max-w-3xl
 
-mt-[240px]        /* MOBILE mover bloque */
+mt-[260px]        /* MOBILE mover bloque */
 sm:mt-[180px]
-md:mt-[350px]     /* DESKTOP mover bloque */
+md:mt-[410px]     /* DESKTOP mover bloque */
 ">
 
                     <h1 className="
@@ -169,11 +203,11 @@ md:mt-[350px]     /* DESKTOP mover bloque */
 
             </section>
 
-            <div className="relative z-10 overflow-hidden whitespace-nowrap bg-gradient-to-r from-black via-[#0B0608] to-black py-3">
+            {/*  <div className="relative z-10 overflow-hidden whitespace-nowrap bg-gradient-to-r from-black via-[#0B0608] to-black py-3"> */}
 
-                {/*  <div className="marquee-track will-change-transform"> */}
+            {/*  <div className="marquee-track will-change-transform"> */}
 
-                {/*  <div className="marquee-group">
+            {/*  <div className="marquee-group">
                         <span className="text-white text-lg md:text-2xl font-semibold mx-[40px]">
                             3 cuotas sin interés<span className="mx-6">•</span>Descuentos Pago Efectivo / Transferencia
                         </span>
@@ -182,7 +216,7 @@ md:mt-[350px]     /* DESKTOP mover bloque */
                         </span>
                     </div> */}
 
-                {/*  <div className="marquee-group" aria-hidden="true">
+            {/*  <div className="marquee-group" aria-hidden="true">
                         <span className="text-white text-lg md:text-2xl font-semibold mx-[40px]">
                             3 cuotas sin interés<span className="mx-6">•</span>Descuentos Pago Efectivo / Transferencia
                         </span>
@@ -190,8 +224,8 @@ md:mt-[350px]     /* DESKTOP mover bloque */
                             3 cuotas sin interés<span className="mx-6">•</span>Descuentos Pago Efectivo / Transferencia
                         </span>
                     </div> */}
-                {/*      </div> */}
-            </div>
+            {/*      </div> */}
+            {/*    </div> */}
 
             <style>{`
     .marquee-track {

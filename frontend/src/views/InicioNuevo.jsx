@@ -98,107 +98,138 @@ export default function InicioNuevo() {
 
 
             {/* HERO PREMIUM CON IMAGEN IMPORTADA */}
-            <section className="
-relative
+            {/* HERO PREMIUM CON IMAGEN IMPORTADA */}
+            <section className="relative overflow-hidden lg:bg-transparent bg-[#0B0608] text-center pt-[0px]">
 
-h-[400px]        /* MOBILE */
-sm:h-[550px]     /* TABLET */
-md:h-[650px]     /* LAPTOP */
-lg:h-[700px]     /* DESKTOP */
+                {/* =========================
+       MOBILE / TABLET
+       ========================= */}
+                <div className="lg:hidden">
+                    {/* IMAGEN SIN ALTURA FIJA */}
+                    <div className="w-full">
+                        <img
+                            src={banner}
+                            alt="banner"
+                            className="
+                w-full
+                h-auto
+                object-contain   /* 🔥 CLAVE: NO RECORTA */
+                brightness-110
+                saturate-110
+                "
+                        />
+                    </div>
 
-flex items-center justify-center text-center overflow-hidden bg-[#0B0608]
-">
+                    {/* BLOQUE NEGRO DINÁMICO */}
+                    <div className="
+            bg-black
+            px-5
+            py-6
+            sm:px-6
+            sm:py-7
+            
 
-                {/* Fondo con tu imagen */}
-                <div
-                    className={`
-    absolute inset-0
-    bg-no-repeat
+            flex flex-col items-center justify-center
+        ">
 
-    /* ============================================
-       📱 MOBILE (base, < 640px)
-       ============================================ */
-    bg-[length:700px_auto]     
-    bg-[position:center_5px]     
+                        <h1 className="
+                text-[22px]
+                sm:text-[24px]
+                leading-tight
+                font-serif
+                font-semibold
+                text-white
+                tracking-wide
+                mb-3
+            ">
+                            {storeConfig.branding.heroTitle}
+                        </h1>
 
-    /* ============================================
-       📱 SMALL TABLET (sm: ≥ 640px)
-       ============================================ */
-    sm:bg-[length:1400px_auto]    /* ↔ Ancho imagen small tablet */
-    sm:bg-[position:center_50px] 
+                        <p className="
+                text-[14px]
+                sm:text-[15px]
+                leading-relaxed
+                font-serif
+                text-gray-200
+                tracking-wide
+                max-w-[320px]
+                sm:max-w-[420px]
+                mx-auto
+            ">
+                            {storeConfig.branding.heroSubtitle}
+                        </p>
 
-    /* ============================================
-       💻 TABLET / LAPTOP (md: ≥ 768px)
-       ============================================ */
-    md:bg-[length:1600px_auto]    /* ↔ Ancho imagen tablet/laptop */
-    md:bg-[position:center_-150px]/* ↕ Posición vertical tablet/laptop */
+                    </div>
+                </div>
 
-    /* ============================================
-       🖥 DESKTOP (lg: ≥ 1024px)
-       ============================================ */
-    lg:bg-[length:2000px_auto]    /* ↔ Ancho imagen desktop */
-    lg:bg-[position:center_-250px]/* ↕ Posición vertical desktop */
-
-    /* ============================================
-       🖥 DESKTOP XL (xl: ≥ 1280px)
-       ============================================ */
-    xl:bg-[length:1200px_auto]    /* ↔ Ancho imagen desktop xl */
-    xl:bg-[position:center_-300px]/* ↕ Posición vertical desktop xl */
-
-    /* ============================================
-       🖥 DESKTOP 2XL (2xl: ≥ 1536px)
-       ============================================ */
-    2xl:bg-[length:1550px_auto]   /* ↔ Ancho imagen 2xl */
-    2xl:bg-[position:center_0px]
-
-    /* ============================================
-       ✨ EFECTOS (no tocar salvo que quieras cambiar el look)
-       ============================================ */
-    animate-zoomSlow
-    brightness-110
-    saturate-110
-  `}
-                    style={{ backgroundImage: `url(${banner})` }}
-                />
-                {/* Overlay oscuro elegante */}
-
-                <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/0 to-black/40" />
-
-                {/* Contenido */}
+                {/* =========================
+       DESKTOP (NO TOCAR)
+       ========================= */}
                 <div className="
-relative z-10 px-6 max-w-3xl
-
-mt-[260px]        /* MOBILE mover bloque */
-sm:mt-[180px]
-md:mt-[410px]     /* DESKTOP mover bloque */
-">
-
-                    <h1 className="
-    text-2xl md:text-3xl
-    font-serif font-semibold text-white tracking-wide
-
-    pt-[20px]        /* MOBILE espacio arriba titulo */
-    md:pt-[190px]    /* DESKTOP espacio arriba */
-
-    mb-[10px]        /* MOBILE espacio abajo titulo */
-    md:mb-[20px]     /* DESKTOP espacio abajo */
+        hidden lg:flex
+        relative
+        h-[650px]
+        lg:h-[700px]
+        items-end
+        justify-center
+        overflow-hidden
     ">
-                        {storeConfig.branding.heroTitle}
-                    </h1>
 
-                    <p className="
-    text-sm md:text-xl
-    font-serif text-gray-200 tracking-wide
+                    <div
+                        className="
+                absolute inset-0
+                bg-no-repeat
 
-    mt-[-5px]        /* MOBILE subir/bajar subtitulo */
-    md:mt-[-20px]    /* DESKTOP */
+                md:bg-[length:100vw_auto]
+                md:bg-[position:center_-100px]
 
-    mb-[20px]        /* espacio abajo subtitulo */
-    md:mb-[30px]
-    ">
-                        {storeConfig.branding.heroSubtitle}
-                    </p>
+                lg:bg-[length:100vw_auto]
+                lg:bg-[position:center_-200px]
 
+                xl:bg-[length:100vw_auto]
+                xl:bg-[position:center_-250px]
+
+                2xl:bg-[length:100vw_auto]
+                2xl:bg-[position:center_-80px]
+
+                brightness-110
+                saturate-110
+            "
+                        style={{ backgroundImage: `url(${banner})` }}
+                    />
+
+                    <div className="
+            relative z-10
+            w-full
+            max-w-3xl
+            px-6
+            pb-12
+            lg:pb-6
+        ">
+
+                        <h1 className="
+                text-3xl
+                font-serif
+                font-semibold
+                text-white lg:!text-black
+                tracking-wide
+                mb-4
+            ">
+                            {storeConfig.branding.heroTitle}
+                        </h1>
+
+                        <p className="
+                text-2xl
+                font-serif
+                text-gray-200
+                font-bold
+                tracking-wide
+                text-gray-200 lg:text-black
+            ">
+                            {storeConfig.branding.heroSubtitle}
+                        </p>
+
+                    </div>
                 </div>
 
             </section>

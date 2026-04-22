@@ -85,6 +85,11 @@ def create_app():
     app.register_blueprint(mercadopago_bp, url_prefix='/api/mercadopago')
     app.register_blueprint(password_bp)
     app.register_blueprint(persistent_login_bp)
+
+    # SPA fallback (para evitar 404 al refrescar)
+    @app.errorhandler(404)
+    def not_found(e):
+        return app.send_static_file("index.html")
     
 
     # ⚠️ No hay api.py adicional; /me/address no existe. Usar /user/address en el front.

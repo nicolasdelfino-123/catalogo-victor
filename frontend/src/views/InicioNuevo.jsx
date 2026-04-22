@@ -11,14 +11,22 @@ import perfumeImg from "../assets/latta_si.webp";
 import afnan from '../assets/afnan.webp'
 import al from '../assets/al.webp'
 import alhara from '../assets/alhara.png'
-import armaf from '../assets/armaf.webp'
+import armaf from '../assets/ajmal.jpg' /*  */
 import bharara from '../assets/bharara.webp'
 import french from '../assets/french.webp'
 
 import lattafa from '../assets/lattafa.png'
-import maison from '../assets/maison.jpg'
-import rasasi from '../assets/rasasi.png'
+import maison from '../assets/armani_si.png' /*  */
+import rasasi from '../assets/creed.jpg' /*  */
 import ray from '../assets/raysi.jpg'
+
+import dior from '../assets/dior.png'
+import maisonf from '../assets/maison.png'
+import tom from '../assets/tom.png'
+import xer from '../assets/xer.png'
+import ysl from '../assets/ysl.jpg'
+
+
 
 export default function InicioNuevo() {
     const { store, actions } = useContext(Context);
@@ -335,7 +343,7 @@ shadow-lg shadow-amber-500/20
                 <Asesoria />
             </section> */}
             <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id='asesoria'>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-10 items-center">
                     {/* Columna izquierda: texto */}
                     <div className="md:col-span-1 text-center md:text-left">
                         <span className="inline-block text-lg tracking-wider font-semibold text-gray-700 bg-purple-50 border border-purple-100 rounded-full px-3 py-1">
@@ -386,8 +394,8 @@ shadow-lg shadow-amber-500/20
                     {/* Divider central (sólo desktop) */}
                     <div className="hidden md:block h-full w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent mx-auto" />
 
-                    {/* Columna derecha: mapa (oscuro por CSS) */}
-                    <div className="hidden md:col-span-1 md:block">
+
+                    {/*   <div className="hidden md:col-span-1 md:block">
                         <div className="relative">
 
                             <div className="rounded-2xl overflow-hidden shadow-xl">
@@ -398,11 +406,11 @@ shadow-lg shadow-amber-500/20
                                 />
                             </div>
 
-                            {/* efecto decorativo */}
+                     
                             <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-purple-200 rounded-full blur-3xl opacity-40"></div>
                         </div>
 
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Filtro para “estilo oscuro” del iframe (sin API key) */}
@@ -416,9 +424,9 @@ shadow-lg shadow-amber-500/20
   `}</style>
             </section>
             <section className="relative bg-white py-8 fade-in-section border-y border-gray-200">
-                {/* <div className="relative z-10 overflow-hidden whitespace-nowrap mx-0 md:mx-[104px]">
+                <div className="relative z-10 overflow-hidden whitespace-nowrap mx-0 md:mx-[104px]">
                     <div className="brands-track will-change-transform">
-                   
+
                         <div className="brands-group">
                             <div className="brand-container">
                                 <img src={afnan} alt="Afnan" className="brand-img" />
@@ -431,7 +439,7 @@ shadow-lg shadow-amber-500/20
                             </div>
                             <div className="brand-container">
                                 <img src={armaf} alt="Armaf" className="brand-img" />
-                            </div>
+                            </div>{/* se va */}
                             <div className="brand-container">
                                 <img src={bharara} alt="Bharara" className="brand-img" />
                             </div>
@@ -440,19 +448,35 @@ shadow-lg shadow-amber-500/20
                             </div>
                             <div className="brand-container">
                                 <img src={lattafa} alt="Lattafa" className="brand-img" />
-                            </div>
+                            </div>{/* se va */}
                             <div className="brand-container">
                                 <img src={maison} alt="Maison" className="brand-img" />
-                            </div>
+                            </div>{/* se va */}
                             <div className="brand-container">
                                 <img src={rasasi} alt="Rasasi" className="brand-img" />
                             </div>
                             <div className="brand-container">
                                 <img src={ray} alt="Ray" className="brand-img" />
                             </div>
+
+                            <div className="brand-container">
+                                <img src={dior} alt="French" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={xer} alt="Lattafa" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={tom} alt="Maison" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={ysl} alt="Rasasi" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={maisonf} alt="Ray" className="brand-img" />
+                            </div>
                         </div>
 
-                    
+
                         <div className="brands-group" aria-hidden="true">
                             <div className="brand-container">
                                 <img src={afnan} alt="Afnan" className="brand-img" />
@@ -484,9 +508,26 @@ shadow-lg shadow-amber-500/20
                             <div className="brand-container">
                                 <img src={ray} alt="Ray" className="brand-img" />
                             </div>
+
+                            <div className="brand-container">
+                                <img src={dior} alt="French" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={xer} alt="Lattafa" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={tom} alt="Maison" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={ysl} alt="Rasasi" className="brand-img" />
+                            </div>
+                            <div className="brand-container">
+                                <img src={maisonf} alt="Ray" className="brand-img" />
+                            </div>
                         </div>
                     </div>
-                </div> */}
+                </div>
+
 
                 <style>{`
         .brands-track {

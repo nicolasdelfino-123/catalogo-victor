@@ -693,8 +693,10 @@ from flask import redirect
 
 # Alias temporal para compatibilidad con /admin/pedidos
 @admin_bp.route("/pedidos", methods=["GET"])
+@jwt_required()
 def alias_pedidos():
-    """Ruta temporal sin JWT hasta que el frontend reenvíe el header correctamente"""
+    if not admin_required():
+        return jsonify({"error": "Acceso denegado"}), 403
     try:
         orders = Order.query.order_by(Order.created_at.desc()).all()
         serialized = [

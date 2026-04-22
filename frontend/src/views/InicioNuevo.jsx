@@ -128,6 +128,7 @@ export default function InicioNuevo() {
             sm:px-6
             sm:py-7
             
+            
 
             flex flex-col items-center justify-center
         ">
@@ -141,6 +142,7 @@ export default function InicioNuevo() {
                 text-white
                 tracking-wide
                 mb-3
+          
             ">
                             {storeConfig.branding.heroTitle}
                         </h1>
@@ -155,6 +157,7 @@ export default function InicioNuevo() {
                 max-w-[320px]
                 sm:max-w-[420px]
                 mx-auto
+               
             ">
                             {storeConfig.branding.heroSubtitle}
                         </p>
@@ -195,7 +198,11 @@ export default function InicioNuevo() {
                 brightness-110
                 saturate-110
             "
-                        style={{ backgroundImage: `url(${banner})` }}
+                        style={{
+                            backgroundImage: `url(${banner})`,
+                            backgroundSize: "100vw auto",
+                            backgroundPosition: "center -50px"
+                        }}
                     />
 
                     <div className="
@@ -214,6 +221,7 @@ export default function InicioNuevo() {
                 text-white lg:!text-black
                 tracking-wide
                 mb-4
+                 lg:hidden
             ">
                             {storeConfig.branding.heroTitle}
                         </h1>
@@ -225,6 +233,7 @@ export default function InicioNuevo() {
                 font-bold
                 tracking-wide
                 text-gray-200 lg:text-black
+                 lg:hidden
             ">
                             {storeConfig.branding.heroSubtitle}
                         </p>

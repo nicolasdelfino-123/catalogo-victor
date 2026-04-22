@@ -31,9 +31,11 @@ export const storeConfig = {
     },
 
     media: {
-        heroImage: "f1_1600_800.png",
+        heroImage: "foto_final_gpt.png",
         footerLogo: "logo_victor_si.png",
-        /*          heroImage: "prueba_1_1600_600.png", */
+
+        /* heroImage: "f1_1600_800.png", */
+
     },
 
     map: {

@@ -25,10 +25,12 @@ def create_app():
     """
     enviroment = os.getenv("FLASK_ENV", "production")
 
+
     if enviroment == "production":
-        static_folder = "/var/www/catalogo/catalogo-attar/frontend/dist"
+        static_folder = os.getenv("STATIC_FOLDER", "frontend/dist")
     else:
         static_folder = "frontend/dist"
+
 
     app = Flask(__name__, static_folder=static_folder, static_url_path="/")
 

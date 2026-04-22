@@ -6,6 +6,9 @@ import { setWholesaleMode } from "./utils/wholesaleMode.js";
 //imports nuevos componentes
 import ProductDetailNuevo from "./components/ui/product/ProductDetailNuevo.jsx";
 
+import QueEsDecant from "./components/QueEsDecant.jsx";
+import Nosotros from "./components/Nosotros.jsx";
+
 import ProductGridNuevo from "./components/ui/product/ProductGridNuevo.jsx";
 import InicioNuevo from "./views/InicioNuevo.jsx";
 
@@ -164,6 +167,8 @@ const Layout = () => {
           {/* Mayorista productos (NUEVO GRID) */}
           {/*     <Route path="/mayorista/products" element={<ProductGridNuevo />} /> */}
           <Route path="/mayorista/categoria/:slug" element={<Mayorista />} />
+          <Route path="/que-es-un-decant" element={<QueEsDecant />} />
+          <Route path="/nosotros" element={<Nosotros />} />
 
           {/* 🔥 RUTA BASE MAYORISTA (CLAVE) */}
           {/* Mayorista landing */}

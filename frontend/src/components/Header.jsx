@@ -139,6 +139,7 @@ export default function Header() {
   const [searchResults, setSearchResults] = useState([]);
 
   const productsCloseTimer = useRef(null);
+  const [infoDropdownOpen, setInfoDropdownOpen] = useState(false);
 
 
 
@@ -405,6 +406,7 @@ export default function Header() {
                   </svg>
                 </button>
 
+
                 {/* Dropdown Menu */}
                 <div
                   className={`absolute left-0 top-full -mt-px w-72 bg-[#111113]
@@ -445,6 +447,51 @@ export default function Header() {
                   </div>
                 </div>
 
+              </div>
+              <div
+                className="relative h-full flex items-center"
+                onMouseEnter={() => setInfoDropdownOpen(true)}
+                onMouseLeave={() => setInfoDropdownOpen(false)}
+              >
+                <button
+                  className="
+  flex items-center gap-1
+  text-gray-300 hover:text-amber-300
+  transition-all duration-300
+  uppercase
+  bg-transparent
+  p-0
+  border-0
+  leading-none
+"
+                >
+                  Información
+                  <svg
+                    className={`ml-1 w-4 h-4 transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div
+                  className={`
+      absolute left-0 top-full -mt-px w-56 bg-[#111113]
+      rounded-b-xl shadow-xl border border-amber-500/20 border-t-0
+      transition-all duration-200
+      ${infoDropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"}
+    `}
+                >
+                  <Link to="/que-es-un-decant" className="block px-5 py-3 text-gray-300 hover:text-amber-300">
+                    ¿Qué es un decant?
+                  </Link>
+
+                  <Link to="/nosotros" className="block px-5 py-3 text-gray-300 hover:text-amber-300">
+                    Quiénes somos
+                  </Link>
+                </div>
               </div>
 
               {/*  <Link
@@ -743,6 +790,29 @@ export default function Header() {
                       </Link>
                     ))}
 
+                  </div>
+                </div>
+                <div className="pt-2">
+                  <span className="block text-gray-400 text-sm uppercase tracking-wider mb-2">
+                    Información
+                  </span>
+
+                  <div className="border-l border-amber-500/30 pl-4 space-y-2">
+                    <Link
+                      to="/que-es-un-decant"
+                      className="block text-gray-300 hover:text-amber-300 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      ¿Qué es un decant?
+                    </Link>
+
+                    <Link
+                      to="/nosotros"
+                      className="block text-gray-300 hover:text-amber-300 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Quiénes somos
+                    </Link>
                   </div>
                 </div>
 

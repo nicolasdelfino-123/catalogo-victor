@@ -140,3 +140,37 @@ export const getDisplayCategoryName = (product) => {
 
     return LEGACY_CATEGORY_NAME_TO_CURRENT[raw] || raw;
 };
+
+export const getProductCategoryIds = (product) => {
+    const rawIds = Array.isArray(product?.category_ids) && product.category_ids.length > 0
+        ? product.category_ids
+        : [product?.category_id];
+
+    return rawIds
+        .map((value) => Number(value))
+        .filter((value, index, arr) => Number.isFinite(value) && value > 0 && arr.indexOf(value) === index);
+};
+
+export const productBelongsToCategory = (product, categoryId) => {
+    const targetId = Number(categoryId);
+    if (!Number.isFinite(targetId) || targetId <= 0) return false;
+    return getProductCategoryIds(product).includes(targetId);
+};
+
+export const getDisplayCategoryNames = (product) => {
+    const ids = getProductCategoryIds(product);
+    if (ids.length > 0) {
+        return ids
+            .map((id) => CATEGORY_ID_TO_NAME[id] || null)
+            .filter(Boolean);
+    }
+
+    if (Array.isArray(product?.category_names) && product.category_names.length > 0) {
+        return product.category_names
+            .map((name) => LEGACY_CATEGORY_NAME_TO_CURRENT[name] || name)
+            .filter(Boolean);
+    }
+
+    const single = getDisplayCategoryName(product);
+    return single ? [single] : [];
+};

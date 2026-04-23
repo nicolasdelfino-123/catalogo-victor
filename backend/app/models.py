@@ -9,10 +9,41 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 AR_TZ = ZoneInfo("America/Argentina/Cordoba")
+MULTI_CATEGORY_META_TYPE = "multi_category_meta"
 
 def now_cba_naive():
     # datetime naive pero en hora local de Córdoba
     return datetime.now(AR_TZ).replace(tzinfo=None)
+
+
+def _split_flavor_catalog_and_category_ids(raw_catalog, fallback_category_id=None):
+    visible_catalog = []
+    category_ids = []
+
+    for item in (raw_catalog or []):
+        if isinstance(item, dict) and item.get("__type") == MULTI_CATEGORY_META_TYPE:
+            for raw_id in (item.get("category_ids") or []):
+                try:
+                    parsed_id = int(raw_id)
+                except Exception:
+                    continue
+                if parsed_id > 0 and parsed_id not in category_ids:
+                    category_ids.append(parsed_id)
+            continue
+        visible_catalog.append(item)
+
+    try:
+        fallback_id = int(fallback_category_id) if fallback_category_id is not None else None
+    except Exception:
+        fallback_id = None
+
+    if fallback_id and fallback_id not in category_ids:
+        category_ids.insert(0, fallback_id)
+
+    if not category_ids and fallback_id:
+        category_ids = [fallback_id]
+
+    return visible_catalog, category_ids
 
 class User(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -115,6 +146,16 @@ class Product(db.Model):
   
     def serialize(self):
         from app.best_sellers_store import is_best_seller_product_id
+        visible_flavor_catalog, category_ids = _split_flavor_catalog_and_category_ids(
+            self.flavor_catalog,
+            self.category_id,
+        )
+        category_names = []
+        if category_ids:
+            rows = Category.query.filter(Category.id.in_(category_ids)).all()
+            names_by_id = {row.id: row.name for row in rows}
+            category_names = [names_by_id[x] for x in category_ids if x in names_by_id]
+
         # Armar lista de URLs de imágenes (principal + asociadas)
         image_urls = []
         if self.image_url:
@@ -157,11 +198,13 @@ class Product(db.Model):
             'brand': self.brand,
             'category_id': self.category_id,
             'category_name': self.category.name if self.category else None,
+            'category_ids': category_ids,
+            'category_names': category_names,
             'is_active': self.is_active,
             'is_best_seller': is_best_seller_product_id(self.id),
             'flavors': self.flavors or [],
             'flavor_enabled': self.flavor_enabled,
-            'flavor_catalog': self.flavor_catalog or [],
+            'flavor_catalog': visible_flavor_catalog,
             'flavor_stock_mode': self.flavor_stock_mode,
             'puffs': self.puffs,
             'nicotine_mg': self.nicotine_mg,

@@ -3,7 +3,6 @@ import { Context } from "../../../js/store/appContext.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
 import sinImagen from "@/assets/sin_imagen.jpg";
 import { formatPrice } from "../../../utils/price.js";
-import { getDisplayCategoryName } from "../../../utils/perfumeCategories.js";
 
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
 
@@ -167,7 +166,7 @@ export default function ProductCardPerfumes({ product, returnTo, isGrid = true }
         ? (wholesalePrice > 0 ? wholesalePrice : null)
         : (retailPrice > 0 ? retailPrice : null);
     const pricePrefix = isWholesale ? "$" : "$";
-    const displayCategoryName = getDisplayCategoryName(product);
+    const displayBrand = String(product?.brand || "").trim();
 
     const stock = Number(selectedSize?.stock ?? product?.stock ?? 0);
     const hasStock = stock > 0;
@@ -264,9 +263,9 @@ export default function ProductCardPerfumes({ product, returnTo, isGrid = true }
                     {product.name}
                 </h3>
 
-                {/* Categoría */}
+                {/* Marca */}
                 <p className="text-[10px] sm:text-xs text-stone-400 uppercase tracking-widest mt-1 text-center">
-                    {displayCategoryName}
+                    {displayBrand || " "}
                 </p>
 
                 {/* Precio */}

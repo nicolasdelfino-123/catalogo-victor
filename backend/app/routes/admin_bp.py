@@ -17,11 +17,13 @@ from flask import Blueprint, request, jsonify, current_app, url_for
 import os, io, hashlib, uuid
 from app.models import Order, OrderItem  # asegurate que esté arriba también
 from flask import redirect
+from sqlalchemy.orm.attributes import flag_modified
 
 
 
 
 admin_bp = Blueprint('admin', __name__)
+MULTI_CATEGORY_META_TYPE = "multi_category_meta"
 
 # Catálogo de categorías esperado por el frontend actual.
 # Mantener IDs estables evita romper FK y filtros ya existentes.
@@ -61,6 +63,8 @@ def _normalize_catalog(catalog):
     norm = []
     for x in (catalog or []):
         if isinstance(x, dict):
+            if x.get('__type') == MULTI_CATEGORY_META_TYPE:
+                continue
             name = str(x.get('name','')).strip()
             active = bool(x.get('active', True))
             try:
@@ -70,8 +74,73 @@ def _normalize_catalog(catalog):
         else:
             # por si llega string suelto
             name, active, stock = str(x).strip(), True, 0
+        if not name:
+            continue
         norm.append({'name': name, 'active': active, 'stock': max(stock, 0)})
     return norm
+
+
+def _normalize_category_ids(raw_ids, fallback_category_id=None):
+    normalized = []
+
+    if isinstance(raw_ids, (list, tuple, set)):
+        source = list(raw_ids)
+    elif raw_ids in (None, ""):
+        source = []
+    else:
+        source = [raw_ids]
+
+    if fallback_category_id not in (None, ""):
+        source.insert(0, fallback_category_id)
+
+    for raw_id in source:
+        try:
+            category_id = int(raw_id)
+        except Exception:
+            continue
+        if category_id <= 0 or category_id in normalized:
+            continue
+        safe_category = _ensure_category_exists(category_id)
+        normalized.append(int(safe_category.id))
+
+    return normalized
+
+
+def _extract_multi_category_ids_from_catalog(catalog, fallback_category_id=None):
+    category_ids = []
+    for item in (catalog or []):
+        if not isinstance(item, dict):
+            continue
+        if item.get('__type') != MULTI_CATEGORY_META_TYPE:
+            continue
+        for raw_id in (item.get('category_ids') or []):
+            try:
+                category_id = int(raw_id)
+            except Exception:
+                continue
+            if category_id > 0 and category_id not in category_ids:
+                category_ids.append(category_id)
+
+    if fallback_category_id not in (None, ""):
+        try:
+            fallback_id = int(fallback_category_id)
+        except Exception:
+            fallback_id = None
+        if fallback_id and fallback_id not in category_ids:
+            category_ids.insert(0, fallback_id)
+
+    return category_ids
+
+
+def _merge_catalog_with_multi_category_meta(catalog, category_ids):
+    visible_catalog = _normalize_catalog(catalog)
+    normalized_category_ids = _normalize_category_ids(category_ids)
+    if not normalized_category_ids:
+        return visible_catalog
+    return visible_catalog + [{
+        '__type': MULTI_CATEGORY_META_TYPE,
+        'category_ids': normalized_category_ids,
+    }]
 
 def _sum_active_stock(catalog):
     return sum(int(f.get('stock', 0)) for f in (catalog or []) if f.get('active'))
@@ -163,6 +232,13 @@ def create_product():
             except:
                 price_wholesale = None
 
+        requested_category_ids = _normalize_category_ids(
+            data.get('category_ids'),
+            data.get('category_id'),
+        )
+        if not requested_category_ids:
+            return jsonify({'error': 'Falta al menos una categoría válida'}), 400
+
         # ===== soporte de stock por sabor =====
         catalog = _normalize_catalog(data.get('flavor_catalog'))
         flavor_stock_mode = bool(data.get('flavor_stock_mode', False))
@@ -188,7 +264,7 @@ def create_product():
             except Exception:
                 computed_stock = 0
 
-        safe_category = _ensure_category_exists(int(data['category_id']))
+        safe_category = _ensure_category_exists(int(requested_category_ids[0]))
 
         product = Product(
             name=data['name'],
@@ -207,7 +283,7 @@ def create_product():
             flavor_enabled=flavor_enabled,
 
             # catálogo completo + modo
-            flavor_catalog=catalog,
+            flavor_catalog=_merge_catalog_with_multi_category_meta(catalog, requested_category_ids),
             flavor_stock_mode=flavor_stock_mode,
 
             # puffs opcional (no molesta si queda)
@@ -239,6 +315,11 @@ def update_product(product_id):
         if not product:
             return jsonify({'error': 'Producto no encontrado'}), 404
 
+        current_category_ids = _extract_multi_category_ids_from_catalog(
+            product.flavor_catalog,
+            product.category_id,
+        )
+
         # Actualizaciones parciales de campos de texto simples
         for field in ['name', 'description', 'short_description', 'brand', 'image_url']:
             if field in data:
@@ -257,9 +338,15 @@ def update_product(product_id):
             except:
                 product.price_wholesale = None
 
-        if 'category_id' in data:
-            next_category_id = int(data['category_id'])
-            safe_category = _ensure_category_exists(next_category_id)
+        next_category_ids = None
+        if 'category_ids' in data or 'category_id' in data:
+            next_category_ids = _normalize_category_ids(
+                data.get('category_ids'),
+                data.get('category_id', product.category_id),
+            )
+            if not next_category_ids:
+                return jsonify({'error': 'Debe quedar al menos una categoría válida'}), 400
+            safe_category = _ensure_category_exists(int(next_category_ids[0]))
             product.category_id = safe_category.id
         if 'is_active' in data:
             product.is_active = bool(data['is_active'])
@@ -291,7 +378,9 @@ def update_product(product_id):
         # ===== NUEVO: catálogo y modo =====
         if ('flavor_catalog' in data) or ('flavor_stock_mode' in data) or ('flavor_enabled' in data) or ('flavors' in data):
             catalog = _normalize_catalog(data.get('flavor_catalog') if 'flavor_catalog' in data else product.flavor_catalog)
-            product.flavor_catalog = catalog
+            effective_category_ids = next_category_ids or current_category_ids or [product.category_id]
+            product.flavor_catalog = _merge_catalog_with_multi_category_meta(catalog, effective_category_ids)
+            flag_modified(product, "flavor_catalog")
 
             if 'flavor_stock_mode' in data:
                 product.flavor_stock_mode = bool(data['flavor_stock_mode'])
@@ -316,6 +405,10 @@ def update_product(product_id):
             elif volume_options_updated:
                 product.stock = _sum_volume_stock(product.volume_options or [])
         else:
+            if next_category_ids is not None:
+                visible_catalog = _normalize_catalog(product.flavor_catalog)
+                product.flavor_catalog = _merge_catalog_with_multi_category_meta(visible_catalog, next_category_ids)
+                flag_modified(product, "flavor_catalog")
             # sin cambios de catálogo: respetar 'stock' si vino
             if 'stock' in data:
                 try:
@@ -324,6 +417,7 @@ def update_product(product_id):
                     product.stock = 0
             elif volume_options_updated and not product.flavor_stock_mode:
                 product.stock = _sum_volume_stock(product.volume_options or [])
+        db.session.add(product)
         product.created_at = now_cba_naive()
         db.session.commit()
         return jsonify({'message': 'Producto actualizado exitosamente', 'product': product.serialize()}), 200

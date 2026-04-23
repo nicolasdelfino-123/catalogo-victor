@@ -14,9 +14,12 @@ import {
 } from "../utils/bestSellers.js";
 import {
     CATEGORY_ID_TO_NAME as ID_TO_CATEGORY_NAME,
+    getDisplayCategoryNames,
+    getProductCategoryIds,
     mapCategoryIdFromName,
     PERFUME_CATEGORY_DEFINITIONS,
     PERFUME_CATEGORY_NAMES,
+    productBelongsToCategory,
 } from "../utils/perfumeCategories.js";
 
 
@@ -26,6 +29,22 @@ const normalizeCategoryLabel = (value = "") =>
     String(value || "")
         .trim()
         .toLowerCase();
+
+const normalizeCategoryIds = (values = []) =>
+    (Array.isArray(values) ? values : [values])
+        .map((value) => Number(value))
+        .filter((value, index, arr) => Number.isFinite(value) && value > 0 && arr.indexOf(value) === index);
+
+const upsertCategoryId = (current = [], nextId) => {
+    const parsedId = Number(nextId);
+    if (!Number.isFinite(parsedId) || parsedId <= 0) return normalizeCategoryIds(current);
+    return normalizeCategoryIds([...current, parsedId]);
+};
+
+const removeCategoryId = (current = [], targetId) =>
+    normalizeCategoryIds(current).filter((value) => Number(value) !== Number(targetId));
+
+const formatCategoryList = (product) => getDisplayCategoryNames(product).join(", ");
 
 const parseFlexibleDecimal = (value) => {
     if (value === "" || value === null || value === undefined) return null;
@@ -924,6 +943,7 @@ export default function AdminProducts() {
                 return "";                                     // invalida textos sueltos (evita 404 /frutal)
             })();
             const { image_urls, volume_stock, is_best_seller, ...cleanForm } = form;
+            const categoryIds = normalizeCategoryIds(form.category_ids || form.category_id);
             const allVolumeOptions = normalizeVolumeOptions(form.volume_options || [], { keepWithoutMl: true });
             const fallbackRetail = Number(
                 allVolumeOptions.find((row) => Number(row?.price) > 0)?.price
@@ -942,6 +962,8 @@ export default function AdminProducts() {
             const directWholesale = parseFlexibleDecimal(form.price_wholesale);
             const payload = {
                 ...cleanForm,
+                category_id: categoryIds[0] || cleanForm.category_id,
+                category_ids: categoryIds,
                 is_best_seller: Boolean(is_best_seller),
                 price:
                     Number.isFinite(directRetail) && directRetail > 0
@@ -1018,7 +1040,10 @@ export default function AdminProducts() {
             }
 
             const selectedCategoryName =
-                ID_TO_CATEGORY_NAME[payload.category_id] || "Sin categoría";
+                (payload.category_ids || [])
+                    .map((id) => ID_TO_CATEGORY_NAME[id])
+                    .filter(Boolean)
+                    .join(", ") || "Sin categoría";
             const action = form.id ? "actualizado" : "creado";
 
             setForm(null);
@@ -1052,6 +1077,10 @@ export default function AdminProducts() {
 
     const save = async (e) => {
         e.preventDefault();
+        if (normalizeCategoryIds(form?.category_ids || form?.category_id).length === 0) {
+            alert("Agregá al menos una categoría");
+            return;
+        }
         const hasConfiguredRows =
             normalizeVolumeOptions(form?.volume_options || [], { keepWithoutMl: true }).length > 0;
         if (!hasConfiguredRows) {
@@ -1165,7 +1194,15 @@ export default function AdminProducts() {
             selectedCategory === "Todos" ||
             (normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Más Vendidos")
                 ? isBestSellerProduct(p, bestSellerIds)
-                : normalizeCategoryLabel(ID_TO_CATEGORY_NAME[p.category_id]) === normalizeCategoryLabel(selectedCategory));
+                : (() => {
+                    const selectedCategoryId = mapCategoryIdFromName(selectedCategory);
+                    if (Number.isFinite(Number(selectedCategoryId)) && Number(selectedCategoryId) > 0) {
+                        return productBelongsToCategory(p, selectedCategoryId);
+                    }
+                    return getDisplayCategoryNames(p).some(
+                        (categoryName) => normalizeCategoryLabel(categoryName) === normalizeCategoryLabel(selectedCategory)
+                    );
+                })());
 
         const isActive = Boolean(p?.is_active);
         const matchesStatus =
@@ -1336,7 +1373,9 @@ export default function AdminProducts() {
                 />
                 <button
                     onClick={() => setForm({
-                        category_id: 1,
+                        category_id: "",
+                        category_ids: [],
+                        category_picker_id: "",
                         is_active: true,
                         is_best_seller: false,
 
@@ -1713,7 +1752,7 @@ export default function AdminProducts() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="hidden p-2 text-center md:table-cell">{ID_TO_CATEGORY_NAME[p.category_id]}</td>
+                                        <td className="hidden p-2 text-center md:table-cell">{formatCategoryList(p)}</td>
                                         <td className="hidden p-2 text-center md:table-cell">
                                             <input
                                                 type="checkbox"
@@ -1858,9 +1897,13 @@ export default function AdminProducts() {
                                                         safeGallery = uniqPush(safeGallery, safeImage);
                                                     }
 
+                                                    const categoryIds = getProductCategoryIds(p);
+
                                                     setForm({
                                                         ...p,
-                                                        category_id: p.category_id,
+                                                        category_id: categoryIds[0] || p.category_id,
+                                                        category_ids: categoryIds,
+                                                        category_picker_id: categoryIds[0] || p.category_id || "",
                                                         is_best_seller: Boolean(isBestSellerProduct(p, bestSellerIds)),
                                                         price: "",
                                                         price_wholesale: "",
@@ -1923,7 +1966,7 @@ export default function AdminProducts() {
                                                     </div>
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Categoria</div>
-                                                        <div className="mt-1">{ID_TO_CATEGORY_NAME[p.category_id]}</div>
+                                                        <div className="mt-1">{formatCategoryList(p)}</div>
                                                     </div>
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Más vendidos</div>
@@ -2565,33 +2608,106 @@ export default function AdminProducts() {
                             </div>
                         )}
 
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Categorías</label>
+                            <div className="flex items-end gap-2">
+                                <select
+                                    className="w-full border rounded px-3 py-2"
+                                    value={form.category_picker_id || ""}
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value;
+                                        const categoryId = rawValue === "" ? "" : parseInt(rawValue, 10);
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            category_picker_id: categoryId,
+                                        }));
+                                    }}
+                                >
+                                    <option value="">Selecciona categoría</option>
+                                    {PERFUME_CATEGORY_DEFINITIONS.filter((category) => category.slug !== "mas-vendidos").map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    className="h-10 px-3 rounded bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                    onClick={() => {
+                                        const nextCategoryId = Number(form.category_picker_id);
+                                        if (!Number.isFinite(nextCategoryId) || nextCategoryId <= 0) return;
 
+                                        setForm((prev) => {
+                                            const nextCategoryIds = upsertCategoryId(prev.category_ids || [], nextCategoryId);
+                                            const primaryCategoryId = nextCategoryIds[0] || prev.category_id || nextCategoryId;
+                                            return {
+                                                ...prev,
+                                                category_id: primaryCategoryId,
+                                                category_ids: nextCategoryIds,
+                                                category_name: ID_TO_CATEGORY_NAME[primaryCategoryId] || prev.category_name,
+                                                category_picker_id: "",
+                                            };
+                                        });
+                                    }}
+                                >
+                                    Agregar
+                                </button>
+                            </div>
 
-
-                        <select
-                            className="w-full border rounded px-3 py-2"
-                            value={form.category_id || ""}
-                            onChange={(e) => {
-                                const categoryId = parseInt(e.target.value)
-                                const show = shouldShowFlavors(categoryId)
-                                setForm({
-                                    ...form,
-                                    category_id: categoryId,
-                                    category_name: ID_TO_CATEGORY_NAME[categoryId] || "Fragancias Masculinas",
-                                    flavor_enabled: show,
-                                    is_best_seller: Boolean(form.is_best_seller),
-                                    flavors: show ? form.flavors || [] : [],
-                                })
-                            }}
-                            required
-                        >
-                            <option value="">Selecciona categoría</option>
-                            {PERFUME_CATEGORY_DEFINITIONS.filter((category) => category.slug !== "mas-vendidos").map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
+                            {(form.category_ids || []).length > 0 && (
+                                <div className="space-y-2 border rounded p-3">
+                                    {(form.category_ids || []).map((categoryId, idx) => (
+                                        <div key={`${categoryId}-${idx}`} className="flex items-center justify-between text-sm border rounded px-3 py-2">
+                                            <span>
+                                                {ID_TO_CATEGORY_NAME[categoryId] || `Categoría ${categoryId}`}
+                                                {idx === 0 ? " · Principal" : ""}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    className="px-2 py-1 border rounded hover:bg-gray-50"
+                                                    title="Editar"
+                                                    onClick={() =>
+                                                        setForm((prev) => {
+                                                            const nextCategoryIds = removeCategoryId(prev.category_ids || [], categoryId);
+                                                            const nextPrimaryId = nextCategoryIds[0] || "";
+                                                            return {
+                                                                ...prev,
+                                                                category_id: nextPrimaryId || "",
+                                                                category_ids: nextCategoryIds,
+                                                                category_name: nextPrimaryId ? (ID_TO_CATEGORY_NAME[nextPrimaryId] || prev.category_name) : "",
+                                                                category_picker_id: categoryId,
+                                                            };
+                                                        })
+                                                    }
+                                                >
+                                                    ✏️
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="px-2 py-1 border rounded hover:bg-gray-50 text-red-600"
+                                                    title="Eliminar"
+                                                    onClick={() =>
+                                                        setForm((prev) => {
+                                                            const nextCategoryIds = removeCategoryId(prev.category_ids || [], categoryId);
+                                                            const nextPrimaryId = nextCategoryIds[0] || "";
+                                                            return {
+                                                                ...prev,
+                                                                category_id: nextPrimaryId || "",
+                                                                category_ids: nextCategoryIds,
+                                                                category_name: nextPrimaryId ? (ID_TO_CATEGORY_NAME[nextPrimaryId] || prev.category_name) : "",
+                                                            };
+                                                        })
+                                                    }
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
                         {/* Sabores solo para 1 y 3 */}
 

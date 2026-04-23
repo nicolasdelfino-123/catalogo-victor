@@ -44,16 +44,18 @@ def get_products():
         # Query base
         query = Product.query.filter(Product.is_active == True)
         
-        # Filtrar por categoría si se especifica
-        if category_id:
-            query = query.filter(Product.category_id == category_id)
-        
         # Filtrar por búsqueda si se especifica
         if search:
             query = query.filter(Product.name.ilike(f'%{search}%'))
         
         products = query.all()
-        return jsonify([product.serialize() for product in products]), 200
+        serialized_products = [product.serialize() for product in products]
+        if category_id:
+            serialized_products = [
+                product for product in serialized_products
+                if int(category_id) in {int(x) for x in (product.get('category_ids') or [product.get('category_id')])}
+            ]
+        return jsonify(serialized_products), 200
         
     except Exception as e:
         return jsonify({'error': 'Error al obtener productos: ' + str(e)}), 500
@@ -94,13 +96,17 @@ def get_products_by_category(category_id):
             return jsonify({'error': 'Categoría no encontrada'}), 404
             
         products = Product.query.filter(
-            Product.category_id == category_id,
             Product.is_active == True
         ).all()
+        serialized_products = [product.serialize() for product in products]
+        serialized_products = [
+            product for product in serialized_products
+            if int(category_id) in {int(x) for x in (product.get('category_ids') or [product.get('category_id')])}
+        ]
         
         return jsonify({
             'category': category.serialize(),
-            'products': [product.serialize() for product in products]
+            'products': serialized_products
         }), 200
         
     except Exception as e:

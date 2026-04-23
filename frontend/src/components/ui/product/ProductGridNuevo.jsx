@@ -11,7 +11,7 @@ import Modal from "../../Modal.jsx";
 import { ChevronRight, ChevronLeft, ArrowUpDown } from "lucide-react";
 import { isBestSellerProduct } from "../../../utils/bestSellers.js";
 import { withWholesale } from "../../../utils/wholesaleMode.js";
-import { SLUG_TO_ID, SLUG_TO_NAME } from "../../../utils/perfumeCategories.js";
+import { productBelongsToCategory, SLUG_TO_ID, SLUG_TO_NAME } from "../../../utils/perfumeCategories.js";
 
 // -----------------------------
 // Persistencia ligera en sessionStorage
@@ -278,9 +278,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
         if (!hasCurrentCategory) return products;
 
         // Categoría actual
-        return products.filter(
-            (p) => Number(p.category_id) === Number(currentCategoryId)
-        );
+        return products.filter((p) => productBelongsToCategory(p, currentCategoryId));
     }, [store.products, currentCategoryId, slug, category, hideFilters, hasCurrentCategory]);
 
     // -----------------------------

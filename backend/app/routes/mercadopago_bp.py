@@ -4,13 +4,21 @@ from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request, jwt_requ
 import mercadopago
 import os, random
 from datetime import datetime
-from ..models import Order, OrderItem, Product, User
+from ..models import MULTI_CATEGORY_META_TYPE, Order, OrderItem, Product, User
 from ..database import db
 from flask import current_app
 # ==== Helpers de Email (SMTP directo, sin Flask-Mail) ====
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+
+def _merge_multi_category_meta_into_catalog(original_catalog, updated_catalog):
+    meta_rows = [
+        item for item in (original_catalog or [])
+        if isinstance(item, dict) and item.get("__type") == MULTI_CATEGORY_META_TYPE
+    ]
+    return list(updated_catalog or []) + meta_rows
 
 
 def format_currency_ars(n):
@@ -669,14 +677,18 @@ def create_order_from_payment(payment_data):
                 print(f"[DEBUG] Stock general prod {prod_id}: {old_stock} -> {product.stock}")
 
                 if selected_flavor and product.flavor_catalog:
-                    catalog = json.loads(json.dumps(product.flavor_catalog or []))
+                    original_catalog = json.loads(json.dumps(product.flavor_catalog or []))
+                    catalog = [
+                        item for item in original_catalog
+                        if not (isinstance(item, dict) and item.get("__type") == MULTI_CATEGORY_META_TYPE)
+                    ]
                     for flavor in catalog:
                         if flavor.get("name") == selected_flavor:
                             old_fstock = flavor.get("stock") or 0
                             flavor["stock"] = max(0, old_fstock - qty)
                             print(f"[DEBUG] Stock sabor '{selected_flavor}': {old_fstock} -> {flavor['stock']}")
                             break
-                    product.flavor_catalog = catalog
+                    product.flavor_catalog = _merge_multi_category_meta_into_catalog(original_catalog, catalog)
                     flag_modified(product, "flavor_catalog")
                     session.add(product)
 
@@ -897,12 +909,16 @@ def create_manual_order():
                 old_stock = product.stock or 0
                 product.stock = max(0, old_stock - qty)
                 if flavor and product.flavor_catalog:
-                    catalog = json.loads(json.dumps(product.flavor_catalog))
+                    original_catalog = json.loads(json.dumps(product.flavor_catalog or []))
+                    catalog = [
+                        item for item in original_catalog
+                        if not (isinstance(item, dict) and item.get("__type") == MULTI_CATEGORY_META_TYPE)
+                    ]
                     for f in catalog:
                         if f.get("name") == flavor:
                             f["stock"] = max(0, (f.get("stock") or 0) - qty)
                             break
-                    product.flavor_catalog = catalog
+                    product.flavor_catalog = _merge_multi_category_meta_into_catalog(original_catalog, catalog)
                     flag_modified(product, "flavor_catalog")
                     session.add(product)
 

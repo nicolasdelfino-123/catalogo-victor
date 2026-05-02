@@ -170,7 +170,7 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
 
     localStorage.setItem("customerData", JSON.stringify(customerData));
 
-    const phone = "5493534793366"; // ⚠️ CAMBIAR POR EL NÚMERO DEL VENDEDOR
+    const phone = "5493765031782"; // ⚠️ CAMBIAR POR EL NÚMERO DEL VENDEDOR
 
     const orderText = buildWhatsAppMessage();
 
@@ -253,7 +253,7 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
   // ===============================
 
   const sendToWhatsApp = () => {
-    const phone = "5493512479800"; // ⚠️ CAMBIAR POR EL NÚMERO DEL CLIENTE
+    const phone = "5493765031782"; // ⚠️ CAMBIAR POR EL NÚMERO DEL CLIENTE
     const text = buildWhatsAppMessage();
 
     const url = `https://wa.me/${phone}?text=${text}`;

@@ -6,6 +6,7 @@ export const PERFUME_CATEGORY_DEFINITIONS = [
     { id: 4, name: "Perfumes Árabes", slug: "perfumes-arabes" },
     { id: 5, name: "Perfumes de Diseñador", slug: "perfumes-de-disenador" },
     { id: 6, name: "Perfumes de Nicho", slug: "perfumes-de-nicho" },
+    { id: 7, name: "Combos", slug: "combos" },
 ];
 
 export const PERFUME_CATEGORY_NAMES = PERFUME_CATEGORY_DEFINITIONS.map((category) => category.name);
@@ -33,6 +34,8 @@ export const CATEGORY_NAME_TO_ID = {
     "Perfumes de Diseñador": 5,
     "Perfumes de Disenador": 5,
     "Perfumes de Nicho": 6,
+    Combos: 7,
+    Cómbos: 7,
 };
 
 export const LEGACY_CATEGORY_NAME_TO_CURRENT = {
@@ -51,6 +54,7 @@ export const LEGACY_CATEGORY_NAME_TO_CURRENT = {
     "Body splash victoria secret": "Perfumes de Nicho",
     "Body Splash Victoria Secret": "Perfumes de Nicho",
     "Perfumes de Disenador": "Perfumes de Diseñador",
+    Cómbos: "Combos",
 };
 
 export const SLUG_TO_NAME = PERFUME_CATEGORY_DEFINITIONS.reduce(
@@ -101,6 +105,8 @@ export const NAME_TO_SLUG = {
     "Perfumes de Diseñador": "perfumes-de-disenador",
     "Perfumes de Disenador": "perfumes-de-disenador",
     "Perfumes de Nicho": "perfumes-de-nicho",
+    Combos: "combos",
+    Cómbos: "combos",
     "Vapes Desechables": "mas-vendidos",
     "Pods Recargables": "fragancias-masculinas",
     "Líquidos": "fragancias-femeninas",
@@ -127,6 +133,7 @@ export const mapCategoryIdFromName = (value = "") => {
     if (normalized.includes("arab")) return 4;
     if (normalized.includes("disen")) return 5;
     if (normalized.includes("nicho")) return 6;
+    if (normalized.includes("combo")) return 7;
     if (normalized.includes("perfume")) return 4;
     return 1;
 };

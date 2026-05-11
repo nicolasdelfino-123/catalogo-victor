@@ -247,6 +247,7 @@ export default function Header() {
     4: "🕌",
     5: "🏷️",
     6: "🧪",
+    7: "🎁",
   };
   const productCategories = PERFUME_CATEGORY_DEFINITIONS.map((category) => ({
     name: category.name,

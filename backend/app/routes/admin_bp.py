@@ -28,13 +28,13 @@ MULTI_CATEGORY_META_TYPE = "multi_category_meta"
 # Catálogo de categorías esperado por el frontend actual.
 # Mantener IDs estables evita romper FK y filtros ya existentes.
 CATEGORY_ID_TO_NAME = {
-    1: "Perfumes masculinos",
-    2: "Femeninos",
-    3: "Unisex",
-    4: "Cremas",
-    5: "Body splash victoria secret",
-    6: "Perfumes",  # compatibilidad legacy
-    7: "Perfumes de Diseñador",
+    1: "Fragancias Masculinas",
+    2: "Fragancias Femeninas",
+    3: "Fragancias Unisex",
+    4: "Perfumes Árabes",
+    5: "Perfumes de Diseñador",
+    6: "Perfumes de Nicho",
+    7: "Combos",
 }
 
 def _ensure_category_exists(category_id: int):

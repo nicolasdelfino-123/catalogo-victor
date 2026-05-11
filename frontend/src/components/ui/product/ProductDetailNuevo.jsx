@@ -385,7 +385,12 @@ export default function ProductDetailNuevo() {
 
                     {/* IMAGEN */}
                     <div>
-                        <div className="bg-white border border-stone-200 rounded-xl p-4 sm:p-6">
+                        <div className="relative bg-white border border-stone-200 rounded-xl p-4 sm:p-6 overflow-hidden">
+                            {getAvailableStock() <= 0 && (
+                                <div className="absolute right-3 top-3 z-10 whitespace-nowrap rounded-full border border-amber-300/70 bg-black/85 px-2 py-0.5 text-[8px] font-semibold uppercase leading-tight tracking-wide text-amber-100 shadow-lg shadow-black/20 backdrop-blur-sm sm:right-4 sm:top-4 sm:px-3 sm:py-1.5 sm:text-xs">
+                                    Sin stock · Próximo ingreso
+                                </div>
+                            )}
                             <img
                                 src={toAbsUrl(activeImg) || sinImagen}
                                 className="w-full object-contain"
@@ -506,8 +511,8 @@ export default function ProductDetailNuevo() {
                                 : "bg-black text-white hover:bg-stone-800"
                                 }`}
                         >
-                            <span className={getAvailableStock() <= 0 ? "text-stone-900" : ""}>
-                                {getAvailableStock() <= 0 ? "Agotado" : "Agregar al carrito"}
+                            <span className={`whitespace-nowrap ${getAvailableStock() <= 0 ? "text-stone-900" : ""}`}>
+                                {getAvailableStock() <= 0 ? "Próximo Ingreso" : "Agregar al carrito"}
                             </span>
                         </button>
 

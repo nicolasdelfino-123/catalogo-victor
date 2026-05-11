@@ -242,8 +242,13 @@ export default function ProductCardPerfumes({ product, returnTo, isGrid = true }
             {/* Imagen */}
             <div
                 onClick={handleProductClick}
-                className="aspect-square bg-gradient-to-b from-white to-stone-50 flex items-center justify-center p-2 sm:p-4 lg:p-5 cursor-pointer overflow-hidden"
+                className="relative aspect-square bg-gradient-to-b from-white to-stone-50 flex items-center justify-center p-2 sm:p-4 lg:p-5 cursor-pointer overflow-hidden"
             >
+                {!hasStock && (
+                    <div className="absolute right-2 top-2 z-10 whitespace-nowrap rounded-full border border-amber-300/70 bg-black/85 px-2 py-0.5 text-[8px] font-semibold uppercase leading-tight tracking-wide text-amber-100 shadow-lg shadow-black/20 backdrop-blur-sm sm:right-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs">
+                        Sin stock · Próximo ingreso
+                    </div>
+                )}
                 <img
                     src={toAbsUrl(product?.image_url) || sinImagen}
                     alt={product?.name || "Producto"}
@@ -337,7 +342,7 @@ export default function ProductCardPerfumes({ product, returnTo, isGrid = true }
                             : "border border-stone-300 bg-stone-100 text-white cursor-not-allowed shadow-none hover:bg-stone-100"
                             }`}
                     >
-                        <span className={hasStock ? "" : "text-stone-900"}>{hasStock ? "Agregar al carrito" : "Agotado"}</span>
+                        <span className={hasStock ? "" : "text-stone-900"}>{hasStock ? "Agregar al carrito" : "Próximo Ingreso"}</span>
                     </button>
 
                 </div>

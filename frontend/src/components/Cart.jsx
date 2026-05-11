@@ -571,8 +571,8 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
       {modalUI}
 
       {showCheckout && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[200]">
-          <div className="bg-white rounded-lg p-6 w-[90%] max-w-md shadow-xl">
+        <div className="fixed inset-0 bg-black/40 flex items-start sm:items-center justify-center z-[200] overflow-y-auto px-4 py-4 sm:py-6">
+          <div className="bg-white rounded-lg p-5 sm:p-6 w-full max-w-md shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
             <h2 className="text-2xl font-serif tracking-wide text-gray-900 mb-3 text-center">
               Datos para el pedido
             </h2>

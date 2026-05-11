@@ -393,7 +393,8 @@ export default function ProductDetailNuevo() {
                             )}
                             <img
                                 src={toAbsUrl(activeImg) || sinImagen}
-                                className="w-full object-contain"
+                                className={`w-full object-contain transition-all duration-300 ${getAvailableStock() <= 0 ? "blur-[1.5px] saturate-75 opacity-80" : ""
+                                    }`}
                                 onError={e => (e.currentTarget.src = sinImagen)}
                             />
                         </div>

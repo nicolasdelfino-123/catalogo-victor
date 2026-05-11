@@ -252,7 +252,8 @@ export default function ProductCardPerfumes({ product, returnTo, isGrid = true }
                 <img
                     src={toAbsUrl(product?.image_url) || sinImagen}
                     alt={product?.name || "Producto"}
-                    className="h-full w-full object-contain scale-[1.12] sm:scale-[1.08] transition-transform duration-500 ease-out group-hover:scale-[1.16] sm:group-hover:scale-[1.12]"
+                    className={`h-full w-full object-contain scale-[1.12] sm:scale-[1.08] transition-all duration-500 ease-out group-hover:scale-[1.16] sm:group-hover:scale-[1.12] ${!hasStock ? "blur-[1.5px] saturate-75 opacity-80" : ""
+                        }`}
                     onError={(e) => { e.currentTarget.src = sinImagen; }}
                 />
             </div>

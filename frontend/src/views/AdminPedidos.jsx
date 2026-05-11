@@ -158,6 +158,11 @@ export default function AdminPedidos() {
                 // detectar mayorista: si los precios parecen mayoristas
                 const isWholesale = items.some(i => i.price && i.price < 1000);
                 const currency = isWholesale ? "$" : "$";
+                const customerPhone =
+                    selected.customer_phone ||
+                    selected.phone ||
+                    selected.shipping_address?.phone ||
+                    "Sin teléfono";
 
                 return (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -185,6 +190,10 @@ export default function AdminPedidos() {
                             <div className="mb-4 space-y-1">
                                 <p>
                                     <strong>Cliente:</strong> {selected.customer_first_name}
+                                </p>
+
+                                <p>
+                                    <strong>Teléfono:</strong> {customerPhone}
                                 </p>
 
                                 <p>

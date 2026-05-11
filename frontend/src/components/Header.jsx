@@ -334,8 +334,8 @@ export default function Header() {
                 </svg>
               </button>
             </div>
-            {/* Logo centrado */}
-            <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
+            {/* Logo centrado solo en mobile */}
+            <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none md:hidden">
               <Link to={withWholesale("/inicio")} aria-label="Ir al inicio" className="pointer-events-auto">
                 <img
                   src={shatha}
@@ -510,8 +510,24 @@ export default function Header() {
             </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center space-x-4 text-white ml-8">
-              <AccountDropdown />
+            <div className="hidden md:flex items-center gap-3 text-white ml-8">
+              <Link
+                to={withWholesale("/inicio")}
+                aria-label="Ir al inicio"
+                className="flex shrink-0 items-center"
+              >
+                <img
+                  src={shatha}
+                  alt="Shatha"
+                  className="h-[56px] w-auto object-contain transition-all duration-300"
+                  decoding="sync"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </Link>
+              <div className="flex min-w-[190px] justify-start">
+                <AccountDropdown />
+              </div>
               {/* Lupa Desktop */}
 
               <button

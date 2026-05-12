@@ -729,7 +729,7 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
               ¿Pedido enviado?
             </h2>
             <p className="text-sm text-gray-500 font-serif tracking-wide mb-5 text-center">
-              Si WhatsApp no se abrió, podés intentarlo otra vez. Si ya enviaste el mensaje, vaciá el carrito.
+              Si WhatsApp no se abrió, podés intentarlo otra vez.
             </p>
             {whatsappOrderPrompt.status === "saving" && (
               <p className="text-xs text-gray-500 font-serif tracking-wide mb-4 text-center">
@@ -762,7 +762,7 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
                 }}
                 className="px-4 py-2 bg-[#232325] text-white rounded-lg font-serif tracking-wide hover:bg-black transition-colors"
               >
-                Vaciar carrito
+                Ya envié el pedido
               </button>
             </div>
           </div>

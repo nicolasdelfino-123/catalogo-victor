@@ -251,6 +251,8 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
       0
     );
 
+    const couponCode = customerData.coupon.trim();
+
     const whatsappUrl = buildWhatsAppUrl(phone, finalMessage);
     const whatsappFallbackUrl = buildWhatsAppWebUrl(phone, finalMessage);
 
@@ -280,7 +282,8 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
         shipping_address: {
           city: customerData.zone,
           label: customerData.zone,
-          phone: customerData.phone
+          phone: customerData.phone,
+          coupon: couponCode || null
         },
         payment_method: customerData.payment,
         order_items: orderItems,

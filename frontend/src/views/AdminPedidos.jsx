@@ -163,6 +163,10 @@ export default function AdminPedidos() {
                     selected.phone ||
                     selected.shipping_address?.phone ||
                     "Sin teléfono";
+                const couponCode =
+                    selected.coupon ||
+                    selected.shipping_address?.coupon ||
+                    null;
 
                 return (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -204,6 +208,12 @@ export default function AdminPedidos() {
                                         coordinar: "A coordinar",
                                     }[selected.payment_method] || selected.payment_method}
                                 </p>
+
+                                {couponCode && (
+                                    <p>
+                                        <strong>Cupón:</strong> {couponCode}
+                                    </p>
+                                )}
                             </div>
 
                             {/* ENVÍO */}

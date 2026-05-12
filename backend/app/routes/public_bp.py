@@ -195,6 +195,10 @@ def create_order():
         if customer_phone and not shipping_address.get("phone"):
             shipping_address["phone"] = customer_phone
 
+        coupon = str(data.get("coupon") or shipping_address.get("coupon") or "").strip()
+        if coupon:
+            shipping_address["coupon"] = coupon
+
         order = Order(
             total_amount=float(data.get("total_amount") or 0),
             payment_method=data.get("payment_method") or "coordinar",

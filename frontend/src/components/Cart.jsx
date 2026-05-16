@@ -726,28 +726,34 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[210]">
           <div className="bg-white rounded-lg p-6 w-[90%] max-w-md shadow-xl">
             <h2 className="text-xl font-serif tracking-wide text-gray-900 mb-3 text-center">
-              ¿Pedido enviado?
+              {whatsappOrderPrompt.status === "failed"
+                ? "Error al registrar el pedido"
+                : "Pedido Registrado"}
             </h2>
             <p className="text-sm text-gray-500 font-serif tracking-wide mb-5 text-center">
-              Si WhatsApp no se abrió, podés intentarlo otra vez.
+              Si WhatsApp no se abrió, podés abrirlo de nuevo haciendo click en "Abrir WhatsApp".
             </p>
             {whatsappOrderPrompt.status === "saving" && (
               <p className="text-xs text-gray-500 font-serif tracking-wide mb-4 text-center">
-                Guardando el pedido en el panel...
+                Registrando pedido...
               </p>
             )}
             {whatsappOrderPrompt.status === "failed" && (
               <p className="text-xs text-red-600 font-serif tracking-wide mb-4 text-center">
-                Si no enviaste el pedido por WhatsApp, por favor intentá nuevamente.
+                Hubo un problema al registrar el pedido. Si no llegaste a enviarlo por WhatsApp, intentá nuevamente.
               </p>
             )}
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <button
-                onClick={() => setWhatsappOrderPrompt(null)}
+              {/*  <button
+                onClick={() => {
+                  actions.clearCart?.();
+                  setWhatsappOrderPrompt(null);
+                  setShowCheckout(false);
+                }}
                 className="px-4 py-2 border border-gray-300 rounded-lg font-serif tracking-wide hover:bg-gray-100 transition-colors"
               >
-                Volver
-              </button>
+                Cerrar
+              </button> */}
               <button
                 onClick={() => openWhatsAppFallbackUrl(whatsappOrderPrompt.fallbackUrl)}
                 className="px-4 py-2 border border-gray-300 rounded-lg font-serif tracking-wide hover:bg-gray-100 transition-colors"

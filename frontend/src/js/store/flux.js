@@ -672,6 +672,15 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 				console.log("💾 [addToCart] Carrito guardado. Total items:", updatedCart.length);
 
+				if (window.gtag) {
+					window.gtag("event", "agrego_al_carrito", {
+						producto: product.name,
+						categoria: product.category || "sin_categoria",
+						cantidad: quantity,
+						tamano_ml: product.selected_size_ml ?? product.volume_ml ?? null
+					});
+				}
+
 				// 👇 Dispara el nuevo toast (NewToast.jsx)
 				const isWholesale = window.location.pathname.startsWith("/mayorista");
 

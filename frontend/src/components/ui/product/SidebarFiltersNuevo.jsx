@@ -200,6 +200,11 @@ export default function SidebarFiltersNuevo({
                             <li key={c.slug}>
                                 <button
                                     onClick={() => {
+                                        if (window.gtag) {
+                                            window.gtag("event", "exploro_categoria", {
+                                                categoria: c.slug
+                                            });
+                                        }
                                         if (onSelectCategory) {
                                             onSelectCategory(c.slug);
                                         } else {

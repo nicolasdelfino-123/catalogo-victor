@@ -254,6 +254,18 @@ export default function ProductDetailNuevo() {
     }, [product?.id]);
 
     useEffect(() => {
+        if (!product) return;
+
+        if (window.gtag) {
+            window.gtag("event", "vio_producto", {
+                producto: product.name,
+                categoria: product.category || "sin_categoria",
+                tamano_ml: product.volume_ml || null
+            });
+        }
+    }, [product?.id]);
+
+    useEffect(() => {
         if (sizeOptions.length > 0) setSelectedSizeMl(String(sizeOptions[0].ml));
         else setSelectedSizeMl("");
     }, [product?.id, sizeOptions.length]);
@@ -439,7 +451,16 @@ export default function ProductDetailNuevo() {
                                             <button
                                                 key={opt.ml}
                                                 type="button"
-                                                onClick={() => setSelectedSizeMl(String(opt.ml))}
+                                                onClick={() => {
+                                                    setSelectedSizeMl(String(opt.ml));
+
+                                                    if (window.gtag) {
+                                                        window.gtag("event", "selecciono_tamano", {
+                                                            producto: product.name,
+                                                            tamano_ml: opt.ml
+                                                        });
+                                                    }
+                                                }}
                                                 className={`px-3 py-1 rounded-full text-xs border transition ${active
                                                     ? "bg-black text-white border-black"
                                                     : "border-stone-300 text-stone-600 hover:border-black"

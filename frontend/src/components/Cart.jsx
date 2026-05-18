@@ -231,6 +231,7 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
       `${extraData}Gracias!`
     );
 
+
     // 🔹 Construir items del pedido
     const isWholesale = window.location.pathname.startsWith("/mayorista");
 
@@ -250,6 +251,15 @@ ${customerData.coupon ? `Cupón: ${customerData.coupon}` : ""}
       (sum, i) => sum + i.price * i.quantity,
       0
     );
+
+    if (window.gtag) {
+      window.gtag("event", "solicito_pedido_whatsapp", {
+        cliente: customerData.name || "sin_nombre",
+        cantidad_productos: store.cart.length,
+        total: totalAmount
+      });
+    }
+
 
     const couponCode = customerData.coupon.trim();
 

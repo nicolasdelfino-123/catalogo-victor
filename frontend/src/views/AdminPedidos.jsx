@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
@@ -7,12 +7,13 @@ export default function AdminPedidos() {
     const [orders, setOrders] = useState([]);
     const [selected, setSelected] = useState(null); // 🆕 Pedido seleccionado
     const [loadingId, setLoadingId] = useState(null);
+    const [orderToHide, setOrderToHide] = useState(null);
     const navigate = useNavigate();
 
     const token =
         localStorage.getItem("token") || localStorage.getItem("admin_token");
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             const res = await fetch(`${API}/admin/orders`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -24,29 +25,35 @@ export default function AdminPedidos() {
         } catch (err) {
             console.error("Error fetching orders:", err);
         }
-    };
+    }, [token]);
 
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+    }, [fetchOrders]);
 
-    const updateStatus = async (id, status, tracking_code = "") => {
+    const hideOrder = async (order) => {
+        setLoadingId(order.id);
         try {
-            const res = await fetch(`${API}/admin/orders/${id}/status`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ status, tracking_code }),
+            const res = await fetch(`${API}/admin/orders/${order.id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error("No se pudo actualizar el estado");
-            await fetchOrders();
-            alert("Estado actualizado y email enviado al cliente");
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                alert(data?.error || "No se pudo ocultar el pedido");
+                return;
+            }
+
+            setOrders((prev) => prev.filter((item) => item.id !== order.id));
+            if (selected?.id === order.id) setSelected(null);
+            setOrderToHide(null);
         } catch (err) {
             console.error(err);
-            alert("Error actualizando estado");
+            alert("Error ocultando pedido");
+        } finally {
+            setLoadingId(null);
         }
     };
 
@@ -114,14 +121,16 @@ export default function AdminPedidos() {
                                     >
                                         Ver detalle
                                     </button>
-                                    {/* {o.status !== "enviado" && (
-                                        <button
-                                            onClick={() => updateStatus(o.id, "enviado")}
-                                            className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
-                                        >
-                                            Marcar enviado
-                                        </button>
-                                    )} */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setOrderToHide(o)}
+                                        disabled={loadingId === o.id}
+                                        className="inline-flex items-center justify-center rounded border border-red-200 px-2.5 py-1 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                        aria-label={`Ocultar pedido #${o.public_order_number || o.id}`}
+                                        title="Ocultar del panel"
+                                    >
+                                        {loadingId === o.id ? "..." : "🗑️"}
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -306,6 +315,48 @@ export default function AdminPedidos() {
                 );
 
             })()}
+
+            {orderToHide && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+                        <h2 className="text-xl font-semibold text-gray-900">Ocultar pedido</h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            El pedido no se va a borrar de la base de datos. Solo se va a ocultar del panel admin.
+                        </p>
+
+                        <div className="mt-4 rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                            <p>
+                                <strong>Pedido:</strong> #{orderToHide.public_order_number || orderToHide.id}
+                            </p>
+                            <p>
+                                <strong>Cliente:</strong> {orderToHide.customer_first_name} {orderToHide.customer_last_name}
+                            </p>
+                            <p>
+                                <strong>Total:</strong> ${orderToHide.total_amount?.toLocaleString() || 0}
+                            </p>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setOrderToHide(null)}
+                                disabled={loadingId === orderToHide.id}
+                                className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => hideOrder(orderToHide)}
+                                disabled={loadingId === orderToHide.id}
+                                className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {loadingId === orderToHide.id ? "Ocultando..." : "Ocultar pedido"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -315,6 +315,10 @@ class Order(db.Model):
     order_items: Mapped[list["OrderItem"]] = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
     def serialize(self):
+        billing_address = dict(self.billing_address or {}) if isinstance(self.billing_address, dict) else self.billing_address
+        if isinstance(billing_address, dict):
+            billing_address.pop("__admin_hidden", None)
+
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -332,7 +336,7 @@ class Order(db.Model):
             'shipping_address': self.shipping_address,
             'shipping_cost': self.shipping_cost,
             'customer_comment': self.customer_comment,
-            'billing_address': self.billing_address,
+            'billing_address': billing_address,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
             'order_items': [item.serialize() for item in self.order_items],

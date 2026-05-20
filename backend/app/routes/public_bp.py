@@ -15,6 +15,15 @@ from email.utils import formataddr
 from flask import Blueprint, request, jsonify
 
 
+def _is_product_hidden(product):
+    return any(
+        isinstance(item, dict)
+        and item.get("__type") == "multi_category_meta"
+        and item.get("is_active_product") is False
+        for item in (product.flavor_catalog or [])
+    )
+
+
 
 
 public_bp = Blueprint('public', __name__)
@@ -48,7 +57,7 @@ def get_products():
         if search:
             query = query.filter(Product.name.ilike(f'%{search}%'))
         
-        products = query.all()
+        products = [product for product in query.all() if not _is_product_hidden(product)]
         serialized_products = [product.serialize() for product in products]
         if category_id:
             serialized_products = [
@@ -70,6 +79,8 @@ def get_product_by_id(product_id):
         ).first()
         
         if not product:
+            return jsonify({'error': 'Producto no encontrado'}), 404
+        if _is_product_hidden(product):
             return jsonify({'error': 'Producto no encontrado'}), 404
             
         return jsonify(product.serialize()), 200
@@ -98,6 +109,7 @@ def get_products_by_category(category_id):
         products = Product.query.filter(
             Product.is_active == True
         ).all()
+        products = [product for product in products if not _is_product_hidden(product)]
         serialized_products = [product.serialize() for product in products]
         serialized_products = [
             product for product in serialized_products

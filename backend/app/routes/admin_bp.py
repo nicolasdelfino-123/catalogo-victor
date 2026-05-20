@@ -24,6 +24,8 @@ from sqlalchemy.orm.attributes import flag_modified
 
 admin_bp = Blueprint('admin', __name__)
 MULTI_CATEGORY_META_TYPE = "multi_category_meta"
+ADMIN_HIDDEN_ORDER_KEY = "__admin_hidden"
+ADMIN_HIDDEN_PRODUCT_KEY = "is_active_product"
 
 # Catálogo de categorías esperado por el frontend actual.
 # Mantener IDs estables evita romper FK y filtros ya existentes.
@@ -57,6 +59,44 @@ def _ensure_category_exists(category_id: int):
     db.session.add(category)
     db.session.flush()
     return category
+
+
+def _is_order_hidden_from_admin(order):
+    return isinstance(order.billing_address, dict) and bool(order.billing_address.get(ADMIN_HIDDEN_ORDER_KEY))
+
+
+def _visible_admin_orders_query():
+    return Order.query.order_by(Order.created_at.desc())
+
+
+def _serialize_admin_order(o):
+    billing_address = dict(o.billing_address or {}) if isinstance(o.billing_address, dict) else o.billing_address
+    if isinstance(billing_address, dict):
+        billing_address.pop(ADMIN_HIDDEN_ORDER_KEY, None)
+
+    return {
+        "id": o.id,
+        "status": o.status,
+        "public_order_number": o.public_order_number,
+        "total_amount": float(o.total_amount or 0),
+        "shipping_cost": float(o.shipping_cost or 0),
+        "payment_method": o.payment_method,
+        "payment_id": o.payment_id,
+        "external_reference": o.external_reference,
+        "customer_first_name": o.customer_first_name,
+        "customer_last_name": o.customer_last_name,
+        "customer_email": o.customer_email,
+        "customer_phone": o.customer_phone,
+        "customer_comment": o.customer_comment,
+        "shipping_address": o.shipping_address,
+        "billing_address": billing_address,
+        "created_at": o.created_at.isoformat() if o.created_at else None,
+        "order_items": [item.serialize() for item in o.order_items],
+        "customer_dni": o.customer_dni,
+        "customer_postal_code": (
+            o.shipping_address.get("postalCode") if isinstance(o.shipping_address, dict) else None
+        ),
+    }
 
 # === Helpers de sabores/stock por sabor ===
 def _normalize_catalog(catalog):
@@ -141,6 +181,24 @@ def _merge_catalog_with_multi_category_meta(catalog, category_ids):
         '__type': MULTI_CATEGORY_META_TYPE,
         'category_ids': normalized_category_ids,
     }]
+
+
+def _is_product_hidden_from_admin(product):
+    return any(
+        isinstance(item, dict)
+        and item.get('__type') == MULTI_CATEGORY_META_TYPE
+        and item.get(ADMIN_HIDDEN_PRODUCT_KEY) is False
+        for item in (product.flavor_catalog or [])
+    )
+
+
+def _catalog_with_product_hidden_marker(catalog):
+    rows = [dict(item) if isinstance(item, dict) else item for item in (catalog or [])]
+    for item in rows:
+        if isinstance(item, dict) and item.get('__type') == MULTI_CATEGORY_META_TYPE:
+            item[ADMIN_HIDDEN_PRODUCT_KEY] = False
+            return rows
+    return rows + [{'__type': MULTI_CATEGORY_META_TYPE, ADMIN_HIDDEN_PRODUCT_KEY: False}]
 
 def _sum_active_stock(catalog):
     return sum(int(f.get('stock', 0)) for f in (catalog or []) if f.get('active'))
@@ -436,17 +494,11 @@ def delete_product(product_id):
         if not product:
             return jsonify({'error': 'Producto no encontrado'}), 404
 
-        hard = str(request.args.get('hard', '')).lower() in ('1','true','yes')
-
-        if hard:
-            # Con ON DELETE CASCADE, al borrar el product se borran sus imágenes
-            db.session.delete(product)
-            set_best_seller_status(product.id, False)
-        else:
-            product.is_active = False  # comportamiento anterior (soft delete)
+        product.flavor_catalog = _catalog_with_product_hidden_marker(product.flavor_catalog)
+        flag_modified(product, "flavor_catalog")
 
         db.session.commit()
-        return jsonify({'message': 'Producto eliminado'}), 200
+        return jsonify({'message': 'Producto ocultado', 'product_id': product_id}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error al eliminar producto: {str(e)}'}), 500
@@ -461,7 +513,7 @@ def get_all_products_admin():
         return jsonify({'error': 'Acceso denegado. Se requieren permisos de administrador.'}), 403
     
     try:
-        products = Product.query.all()  # Incluye productos inactivos
+        products = [product for product in Product.query.all() if not _is_product_hidden_from_admin(product)]
         return jsonify([product.serialize() for product in products]), 200
         
     except Exception as e:
@@ -688,40 +740,40 @@ def admin_get_orders():
         return jsonify({"error": "Acceso denegado. Se requieren permisos de administrador."}), 403
 
     try:
-        orders = Order.query.order_by(Order.created_at.desc()).all()
-        serialized = []
-
-        for o in orders:
-            serialized.append({
-                "id": o.id,
-                "status": o.status,
-                "public_order_number": o.public_order_number, 
-                "total_amount": float(o.total_amount or 0),
-                "shipping_cost": float(o.shipping_cost or 0),
-                "payment_method": o.payment_method,
-                "payment_id": o.payment_id,
-                "external_reference": o.external_reference,
-                "customer_first_name": o.customer_first_name,
-                "customer_last_name": o.customer_last_name,
-                "customer_email": o.customer_email,
-                "customer_phone": o.customer_phone,
-                "customer_comment": o.customer_comment,
-                "shipping_address": o.shipping_address,
-                "billing_address": o.billing_address,
-                "created_at": o.created_at.isoformat() if o.created_at else None,
-                "order_items": [item.serialize() for item in o.order_items],
-                "customer_dni": o.customer_dni,
-                "customer_postal_code": (
-                    o.shipping_address.get("postalCode") if isinstance(o.shipping_address, dict) else None
-                ),
-
-
-            })
+        orders = [o for o in _visible_admin_orders_query().all() if not _is_order_hidden_from_admin(o)]
+        serialized = [_serialize_admin_order(o) for o in orders]
 
         return jsonify(serialized), 200
 
     except Exception as e:
         return jsonify({"error": f"Error al obtener pedidos: {str(e)}"}), 500
+
+
+@admin_bp.route("/orders/<int:order_id>", methods=["DELETE"])
+@jwt_required()
+def admin_hide_order(order_id):
+    """Oculta un pedido del panel admin sin borrarlo de la base de datos."""
+    if not admin_required():
+        return jsonify({"error": "Acceso denegado"}), 403
+
+    try:
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({"error": "Pedido no encontrado"}), 404
+
+        billing_address = order.billing_address if isinstance(order.billing_address, dict) else {}
+        order.billing_address = {**billing_address, ADMIN_HIDDEN_ORDER_KEY: True}
+        order.updated_at = now_cba_naive()
+        flag_modified(order, "billing_address")
+        db.session.commit()
+
+        return jsonify({
+            "message": f"Pedido #{order.public_order_number or order.id} ocultado del panel admin",
+            "order_id": order_id,
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error al ocultar pedido: {str(e)}"}), 500
 
 
 
@@ -792,36 +844,8 @@ def alias_pedidos():
     if not admin_required():
         return jsonify({"error": "Acceso denegado"}), 403
     try:
-        orders = Order.query.order_by(Order.created_at.desc()).all()
-        serialized = [
-            {
-                "id": o.id,
-                "status": o.status,
-                "public_order_number": o.public_order_number, 
-                "total_amount": float(o.total_amount or 0),
-                "shipping_cost": float(o.shipping_cost or 0),
-                "payment_method": o.payment_method,
-                "payment_id": o.payment_id,
-                "external_reference": o.external_reference,
-                "customer_first_name": o.customer_first_name,
-                "customer_last_name": o.customer_last_name,
-                "customer_email": o.customer_email,
-                "customer_phone": o.customer_phone,
-                "customer_comment": o.customer_comment,
-                "shipping_address": o.shipping_address,
-                "billing_address": o.billing_address,
-                "created_at": o.created_at.isoformat() if o.created_at else None,
-                "order_items": [item.serialize() for item in o.order_items],
-                "customer_dni": o.customer_dni,
-                "customer_postal_code": (
-                    o.shipping_address.get("postalCode") if isinstance(o.shipping_address, dict) else None
-                ),
-
-
-
-            }
-            for o in orders
-        ]
+        orders = [o for o in _visible_admin_orders_query().all() if not _is_order_hidden_from_admin(o)]
+        serialized = [_serialize_admin_order(o) for o in orders]
         return jsonify(serialized), 200
     except Exception as e:
         return jsonify({"error": f"Error al obtener pedidos: {str(e)}"}), 500

@@ -15,6 +15,8 @@ const version = [
   pad(now.getHours()),
   pad(now.getMinutes()),
   pad(now.getSeconds()),
+  "-",
+  String(now.getMilliseconds()).padStart(3, "0"),
 ].join("");
 
 fs.mkdirSync(publicDir, { recursive: true });

@@ -294,7 +294,7 @@ export default function InicioNuevo() {
             <section className="max-w-7xl mx-auto px-2 sm:px-4 py-12">
                 <div className="text-center mb-10">
                     <h2 className="text-2xl md:text-3xl font-serif font-semibold tracking-wide">
-                        Productos destacados
+                        Productos Destacados
                     </h2>
 
                     <div className="w-16 h-[2px] bg-amber-500 mx-auto mt-4"></div>

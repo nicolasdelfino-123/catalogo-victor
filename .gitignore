@@ -149,6 +149,8 @@ typings/
 .nuxt
 dist
 .cache/
+frontend/public/version.json
+frontend/src/generated/buildVersion.js
 
 
 # Vuepress

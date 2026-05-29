@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import injectContext, { Context } from "./js/store/appContext.jsx";
 import { setWholesaleMode } from "./utils/wholesaleMode.js";
+import useVersionCheck from "./hooks/useVersionCheck.js";
 
 //imports nuevos componentes
 import ProductDetailNuevo from "./components/ui/product/ProductDetailNuevo.jsx";
@@ -102,6 +103,7 @@ const ModeWatcher = () => {
 const Layout = () => {
   const { store, actions } = useContext(Context);
   const [loading, setLoading] = useState(true);
+  useVersionCheck();
 
   /*   const inicioImages = [
       heroBg, banner1, recargables, celu,

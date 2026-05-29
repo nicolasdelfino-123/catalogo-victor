@@ -291,7 +291,7 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
       coupon: couponTotals?.code || ""
     }));
 
-    const phone = "5493534793366"; // ⚠️ CAMBIAR POR EL NÚMERO DEL VENDEDOR
+    const phone = "5493765031782"; // ⚠️ CAMBIAR POR EL NÚMERO DEL VENDEDOR
 
     const orderText = buildWhatsAppMessage();
 

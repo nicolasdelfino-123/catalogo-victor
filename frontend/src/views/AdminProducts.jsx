@@ -1436,6 +1436,12 @@ export default function AdminProducts() {
                 >
                     Ver pedidos
                 </Link>
+                <Link
+                    to="/admin/coupons"
+                    className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-black inline-block text-center"
+                >
+                    Cupones
+                </Link>
 
 
                 {/* Importar JSON */}

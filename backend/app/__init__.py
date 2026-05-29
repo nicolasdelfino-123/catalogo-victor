@@ -78,6 +78,7 @@ def create_app():
     from app.routes.mercadopago_bp import mercadopago_bp
     from app.routes.password_bp import password_bp
     from app.routes.persistent_login_bp import persistent_login_bp
+    from app.routes.coupons_bp import coupons_bp
 
     app.register_blueprint(user_bp, url_prefix='/user')
     app.register_blueprint(public_bp, url_prefix='/public')
@@ -85,6 +86,7 @@ def create_app():
     app.register_blueprint(mercadopago_bp, url_prefix='/api/mercadopago')
     app.register_blueprint(password_bp)
     app.register_blueprint(persistent_login_bp)
+    app.register_blueprint(coupons_bp)
 
     # SPA fallback (para evitar 404 al refrescar)
     @app.errorhandler(404)

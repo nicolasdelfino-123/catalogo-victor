@@ -33,6 +33,7 @@ import GlobalSpinner from "./components/GlobalSpinner.jsx";
 
 // Admin & Cuenta
 import AdminProducts from "./views/AdminProducts.jsx";
+import AdminCoupons from "./views/AdminCoupons.jsx";
 import LoginAdmin from "./views/LoginAdmin.jsx";
 import AccountLayout from "./views/AccountLayout.jsx";
 import Dashboard from "./views/Dashboard.jsx";
@@ -210,6 +211,7 @@ const Layout = () => {
 
           {/* Admin */}
           <Route path="/admin/products" element={<AdminProducts />} />
+          <Route path="/admin/coupons" element={<AdminCoupons />} />
           <Route path="/admin/login" element={<LoginAdmin />} />
           <Route path="/admin/pedidos" element={<AdminPedidos />} />
 

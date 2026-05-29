@@ -14,7 +14,7 @@ export const storeConfig = {
     },
 
     contact: {
-        whatsapp: "5493765031782",
+        whatsapp: "5493534793366",
         whatsappMessage: "Hola, quiero consultar por un perfume del catálogo",
         whatsappDisplay: "+54 9 376 503-1782",
 

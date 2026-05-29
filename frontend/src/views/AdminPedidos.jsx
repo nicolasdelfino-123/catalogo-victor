@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatCouponMoney, getCouponFromOrder } from "../utils/coupons.js";
 
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
 
@@ -172,10 +173,7 @@ export default function AdminPedidos() {
                     selected.phone ||
                     selected.shipping_address?.phone ||
                     "Sin teléfono";
-                const couponCode =
-                    selected.coupon ||
-                    selected.shipping_address?.coupon ||
-                    null;
+                const coupon = getCouponFromOrder(selected);
 
                 return (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -218,9 +216,9 @@ export default function AdminPedidos() {
                                     }[selected.payment_method] || selected.payment_method}
                                 </p>
 
-                                {couponCode && (
+                                {coupon && (
                                     <p>
-                                        <strong>Cupón:</strong> {couponCode}
+                                        <strong>Cupón:</strong> {coupon.code} ({coupon.percent}% OFF)
                                     </p>
                                 )}
                             </div>
@@ -296,13 +294,35 @@ export default function AdminPedidos() {
                                     </tbody>
 
                                     <tfoot>
+                                        {coupon && (
+                                            <>
+                                                <tr className="border-t text-gray-500">
+                                                    <td colSpan="3" className="p-2 text-right">
+                                                        Subtotal original
+                                                    </td>
+
+                                                    <td className="p-2 text-right line-through">
+                                                        {currency}{formatCouponMoney(coupon.subtotal)}
+                                                    </td>
+                                                </tr>
+                                                <tr className="text-emerald-700">
+                                                    <td colSpan="3" className="p-2 text-right">
+                                                        Descuento {coupon.code}
+                                                    </td>
+
+                                                    <td className="p-2 text-right">
+                                                        -{currency}{formatCouponMoney(coupon.discount)}
+                                                    </td>
+                                                </tr>
+                                            </>
+                                        )}
                                         <tr className="border-t font-semibold">
                                             <td colSpan="3" className="p-2 text-right">
-                                                Total
+                                                {coupon ? "Total con descuento" : "Total"}
                                             </td>
 
                                             <td className="p-2 text-right">
-                                                {currency}{selected.total_amount?.toLocaleString() || 0}
+                                                {currency}{formatCouponMoney(selected.total_amount)}
                                             </td>
                                         </tr>
                                     </tfoot>

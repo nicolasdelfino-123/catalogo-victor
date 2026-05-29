@@ -79,6 +79,7 @@ def _serialize_admin_order(o):
         "status": o.status,
         "public_order_number": o.public_order_number,
         "total_amount": float(o.total_amount or 0),
+        "coupon": billing_address.get("coupon") if isinstance(billing_address, dict) else None,
         "shipping_cost": float(o.shipping_cost or 0),
         "payment_method": o.payment_method,
         "payment_id": o.payment_id,

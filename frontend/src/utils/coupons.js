@@ -17,11 +17,11 @@ export const getCouponFromOrder = (order) => {
     return coupon && typeof coupon === "object" ? coupon : null;
 };
 
-export const validateCoupon = async ({ code, subtotal }) => {
+export const validateCoupon = async ({ code, subtotal, items = [] }) => {
     const res = await fetch(`${API}/public/coupons/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: normalizeCouponCode(code), subtotal }),
+        body: JSON.stringify({ code: normalizeCouponCode(code), subtotal, items }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data?.valid) {

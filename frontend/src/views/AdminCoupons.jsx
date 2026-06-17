@@ -1,14 +1,25 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { PERFUME_CATEGORY_DEFINITIONS } from "../utils/perfumeCategories.js";
 
 const API = import.meta.env.VITE_BACKEND_URL?.replace(/\/+$/, "") || "";
 
 const normalizeCode = (value = "") => String(value || "").trim().toUpperCase();
+const normalizeOption = (value = "") => String(value || "").trim();
+
+const getScopeLabel = (coupon) => {
+    const values = Array.isArray(coupon?.scope_values) ? coupon.scope_values : [];
+    if (coupon?.scope_type === "brand") return values.length ? `Marca: ${values.join(", ")}` : "Marca";
+    if (coupon?.scope_type === "category") return values.length ? `Categoría: ${values.join(", ")}` : "Categoría";
+    if (coupon?.scope_type === "best_seller") return "Más vendidos";
+    return "Todos los productos";
+};
 
 export default function AdminCoupons() {
     const token = localStorage.getItem("token") || localStorage.getItem("admin_token");
     const [coupons, setCoupons] = useState([]);
-    const [form, setForm] = useState({ code: "", percent: "", active: true });
+    const [products, setProducts] = useState([]);
+    const [form, setForm] = useState({ code: "", percent: "", active: true, scope_type: "all", scope_values: [] });
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
@@ -38,6 +49,50 @@ export default function AdminCoupons() {
         fetchCoupons();
     }, [fetchCoupons]);
 
+    useEffect(() => {
+        if (!token) return;
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch(`${API}/admin/products`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json().catch(() => []);
+                if (res.ok && Array.isArray(data)) setProducts(data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        fetchProducts();
+    }, [token]);
+
+    const brandOptions = useMemo(() => {
+        const seen = new Map();
+        for (const product of products) {
+            const brand = normalizeOption(product?.brand);
+            if (!brand) continue;
+            const key = brand.toLocaleLowerCase("es-AR");
+            if (!seen.has(key)) seen.set(key, brand);
+        }
+        return [...seen.values()].sort((a, b) => a.localeCompare(b, "es-AR"));
+    }, [products]);
+
+    const categoryOptions = useMemo(() => (
+        PERFUME_CATEGORY_DEFINITIONS
+            .map((category) => ({
+                value: category.name,
+                label: category.name,
+            }))
+    ), []);
+
+    const setScopeType = (scope_type) => {
+        setForm((prev) => ({ ...prev, scope_type, scope_values: [] }));
+    };
+
+    const setScopeValuesFromSelect = (event) => {
+        const values = [...event.target.selectedOptions].map((option) => option.value);
+        setForm((prev) => ({ ...prev, scope_values: values }));
+    };
+
     const saveCoupon = async (event) => {
         event.preventDefault();
         const code = normalizeCode(form.code);
@@ -51,6 +106,15 @@ export default function AdminCoupons() {
             setMessage("El descuento debe estar entre 1 y 100");
             return;
         }
+        const isBestSellerCoupon = form.scope_type === "category" && form.scope_values.includes("Más Vendidos");
+        if (isBestSellerCoupon && form.scope_values.length > 1) {
+            setMessage("Más Vendidos debe seleccionarse solo, sin mezclar con otras categorías");
+            return;
+        }
+        if (["brand", "category"].includes(form.scope_type) && form.scope_values.length === 0) {
+            setMessage(form.scope_type === "brand" ? "Seleccioná al menos una marca" : "Seleccioná al menos una categoría");
+            return;
+        }
 
         setSaving(true);
         setMessage("");
@@ -61,7 +125,13 @@ export default function AdminCoupons() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ code, percent, active: form.active }),
+                body: JSON.stringify({
+                    code,
+                    percent,
+                    active: form.active,
+                    scope_type: isBestSellerCoupon ? "best_seller" : form.scope_type,
+                    scope_values: ["all", "best_seller"].includes(form.scope_type) || isBestSellerCoupon ? [] : form.scope_values,
+                }),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
@@ -69,7 +139,7 @@ export default function AdminCoupons() {
                 return;
             }
             setCoupons(data?.coupons || []);
-            setForm({ code: "", percent: "", active: true });
+            setForm({ code: "", percent: "", active: true, scope_type: "all", scope_values: [] });
             setMessage("Cupón guardado");
         } catch (error) {
             console.error(error);
@@ -174,10 +244,73 @@ export default function AdminCoupons() {
                     />
                     Activo
                 </label>
+                <div className="sm:col-span-4">
+                    <span className="mb-2 block text-xs font-semibold uppercase text-gray-500">Aplicar cupón</span>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "all" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : ""}`}>
+                            <input
+                                type="radio"
+                                name="coupon_scope"
+                                checked={form.scope_type === "all"}
+                                onChange={() => setScopeType("all")}
+                                className="accent-gray-900"
+                            />
+                            Todos los productos
+                        </label>
+                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "brand" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : ""}`}>
+                            <input
+                                type="radio"
+                                name="coupon_scope"
+                                checked={form.scope_type === "brand"}
+                                onChange={() => setScopeType("brand")}
+                                className="accent-gray-900"
+                            />
+                            Por marca
+                        </label>
+                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "category" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : ""}`}>
+                            <input
+                                type="radio"
+                                name="coupon_scope"
+                                checked={form.scope_type === "category"}
+                                onChange={() => setScopeType("category")}
+                                className="accent-gray-900"
+                            />
+                            Por categoría
+                        </label>
+                    </div>
+                </div>
+                <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold uppercase text-gray-500">Marcas</span>
+                    <select
+                        multiple
+                        value={form.scope_type === "brand" ? form.scope_values : []}
+                        onChange={setScopeValuesFromSelect}
+                        disabled={form.scope_type !== "brand"}
+                        className="h-28 w-full rounded border px-3 py-2 disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                        {brandOptions.map((brand) => (
+                            <option key={brand} value={brand}>{brand}</option>
+                        ))}
+                    </select>
+                </label>
+                <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold uppercase text-gray-500">Categorías</span>
+                    <select
+                        multiple
+                        value={form.scope_type === "category" ? form.scope_values : []}
+                        onChange={setScopeValuesFromSelect}
+                        disabled={form.scope_type !== "category"}
+                        className="h-28 w-full rounded border px-3 py-2 disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                        {categoryOptions.map((category) => (
+                            <option key={category.value} value={category.value}>{category.label}</option>
+                        ))}
+                    </select>
+                </label>
                 <button
                     type="submit"
                     disabled={saving}
-                    className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 sm:col-start-4"
                 >
                     {saving ? "Guardando..." : "Agregar"}
                 </button>
@@ -191,6 +324,7 @@ export default function AdminCoupons() {
                         <tr>
                             <th className="p-3 text-left">Cupón</th>
                             <th className="p-3 text-left">Descuento</th>
+                            <th className="p-3 text-left">Aplicado a</th>
                             <th className="p-3 text-left">Estado</th>
                             <th className="p-3 text-right">Acción</th>
                         </tr>
@@ -198,16 +332,17 @@ export default function AdminCoupons() {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={4} className="p-6 text-center text-gray-500">Cargando...</td>
+                                <td colSpan={5} className="p-6 text-center text-gray-500">Cargando...</td>
                             </tr>
                         ) : coupons.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="p-6 text-center text-gray-500">Sin cupones cargados</td>
+                                <td colSpan={5} className="p-6 text-center text-gray-500">Sin cupones cargados</td>
                             </tr>
                         ) : coupons.map((coupon) => (
                             <tr key={coupon.code} className="border-t">
                                 <td className="p-3 font-semibold">{coupon.code}</td>
                                 <td className="p-3">{coupon.percent}%</td>
+                                <td className="p-3 text-gray-600">{getScopeLabel(coupon)}</td>
                                 <td className="p-3">
                                     <span className={`rounded px-2 py-1 text-xs ${coupon.active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
                                         {coupon.active ? "Activo" : "Inactivo"}

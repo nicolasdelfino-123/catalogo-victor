@@ -37,6 +37,37 @@ const getSelectedMl = (it) => {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
 };
 
+const normalizeScopeValue = (value = "") =>
+  String(value || "").trim().toLocaleLowerCase("es-AR");
+
+const itemMatchesCouponScope = (item, coupon) => {
+  const scopeType = coupon?.scope_type || "all";
+  if (scopeType === "all") return true;
+
+  const scopeValues = new Set((coupon?.scope_values || []).map(normalizeScopeValue).filter(Boolean));
+  if (scopeValues.size === 0) return false;
+
+  if (scopeType === "brand") {
+    return scopeValues.has(normalizeScopeValue(item?.brand || item?.product_brand || item?.marca || item?.product?.brand));
+  }
+
+  if (scopeType === "category") {
+    const rawValues = [
+      item?.category_id,
+      item?.category_name,
+      ...(Array.isArray(item?.category_ids) ? item.category_ids : []),
+      ...(Array.isArray(item?.category_names) ? item.category_names : []),
+    ];
+    return rawValues.some((value) => scopeValues.has(normalizeScopeValue(value)));
+  }
+
+  if (scopeType === "best_seller") {
+    return Boolean(item?.is_best_seller || item?.product?.is_best_seller);
+  }
+
+  return false;
+};
+
 // BLOQUE WHATSAPP SEGURO A REPLICAR EN OTRAS APPS
 const buildWhatsAppUrl = (phone, message) => {
   const encodedMessage = encodeURIComponent(message);
@@ -141,14 +172,36 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
     return sum + price * (Number(item.quantity) || 0);
   }, 0);
 
+  const buildCouponItems = () => (store.cart || []).map((item) => ({
+    product_id: item.id || item.product_id,
+    id: item.id,
+    quantity: Number(item.quantity) || 0,
+    price: getItemPrice(item) || 0,
+    brand: item.brand || item.product_brand || item.marca || item.product?.brand || "",
+    category_id: item.category_id || item.product?.category_id || null,
+    category_ids: item.category_ids || item.product?.category_ids || [],
+    category_name: item.category_name || item.product?.category_name || "",
+    category_names: item.category_names || item.product?.category_names || [],
+    is_best_seller: Boolean(item.is_best_seller || item.product?.is_best_seller),
+  }));
+
   const couponTotals = appliedCoupon
     ? (() => {
       const subtotal = Math.round(total);
       const percent = Number(appliedCoupon.percent) || 0;
-      const discount = Math.round(subtotal * percent / 100);
+      const eligibleSubtotal = (appliedCoupon.scope_type && appliedCoupon.scope_type !== "all")
+        ? Math.round((store.cart || []).reduce((sum, item) => {
+          if (!itemMatchesCouponScope(item, appliedCoupon)) return sum;
+          const price = getItemPrice(item);
+          if (price === null) return sum;
+          return sum + price * (Number(item.quantity) || 0);
+        }, 0))
+        : subtotal;
+      const discount = Math.round(eligibleSubtotal * percent / 100);
       return {
         ...appliedCoupon,
         subtotal,
+        eligible_subtotal: eligibleSubtotal,
         discount,
         total: Math.max(0, subtotal - discount),
       };
@@ -170,7 +223,7 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
     setValidatingCoupon(true);
     setCouponStatus(null);
     try {
-      const result = await validateCoupon({ code, subtotal: total });
+      const result = await validateCoupon({ code, subtotal: total, items: buildCouponItems() });
       if (!result.valid) {
         setAppliedCoupon(null);
         setCouponStatus({ type: "error", message: result.error || "Cupón inválido o inactivo" });
@@ -322,7 +375,13 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
         ? (Number(item.price_wholesale) > 0 ? Number(item.price_wholesale) : 0)
         : (Number(item.price) > 0 ? Number(item.price) : 0),
       selected_flavor: item.selectedFlavor || null,
-      selected_size_ml: getSelectedMl(item)
+      selected_size_ml: getSelectedMl(item),
+      brand: item.brand || item.product_brand || item.marca || item.product?.brand || "",
+      category_id: item.category_id || item.product?.category_id || null,
+      category_ids: item.category_ids || item.product?.category_ids || [],
+      category_name: item.category_name || item.product?.category_name || "",
+      category_names: item.category_names || item.product?.category_names || [],
+      is_best_seller: Boolean(item.is_best_seller || item.product?.is_best_seller)
     }));
 
     if (window.gtag) {

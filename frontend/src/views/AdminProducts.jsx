@@ -1539,7 +1539,18 @@ export default function AdminProducts() {
                     >
                         Limpiar filtros
                     </button>
+                    <div className="text-sm font-medium text-amber-950 sm:ml-auto whitespace-nowrap">
+                        Productos en esta página: {filtered.length}
+                    </div>
                 </div>
+            )}
+
+            {!hasActiveFilters && (
+            <div className="mb-3 flex justify-end">
+                <div className="rounded border bg-white px-3 py-2 text-right text-sm font-medium text-gray-700 shadow-sm">
+                    Productos en esta página: {filtered.length}
+                </div>
+            </div>
             )}
 
             {/* Tabla */}

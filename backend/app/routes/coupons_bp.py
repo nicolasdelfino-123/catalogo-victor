@@ -33,6 +33,8 @@ def admin_upsert_coupon():
             data.get("code"),
             data.get("percent"),
             data.get("active", True),
+            data.get("scope_type", "all"),
+            data.get("scope_values") or [],
         )
         return jsonify({"coupon": coupon, "coupons": list_coupons()}), 200
     except ValueError as exc:
@@ -71,7 +73,7 @@ def admin_disable_coupon(code):
 @coupons_bp.route("/public/coupons/validate", methods=["POST"])
 def public_validate_coupon():
     data = request.get_json() or {}
-    result = calculate_discount(data.get("subtotal"), data.get("code"))
+    result = calculate_discount(data.get("subtotal"), data.get("code"), data.get("items"))
     if not result:
         return jsonify({"valid": False, "error": "Cupón inválido o inactivo"}), 404
 

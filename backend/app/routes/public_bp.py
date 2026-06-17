@@ -232,7 +232,7 @@ def create_order():
                 price = 0
             subtotal_amount += max(0, qty) * max(0, price)
 
-        coupon_snapshot = calculate_discount(subtotal_amount, coupon) if coupon else None
+        coupon_snapshot = calculate_discount(subtotal_amount, coupon, data.get("order_items")) if coupon else None
         if coupon_snapshot:
             billing_address["coupon"] = coupon_snapshot
 

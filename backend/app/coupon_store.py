@@ -58,6 +58,44 @@ def _normalize_scope_values(values) -> list[str]:
     return normalized
 
 
+def _normalize_scope_match_value(value) -> str:
+    return " ".join(str(value or "").strip().casefold().split())
+
+
+def _category_match_keys(value) -> set[str]:
+    text = _normalize_scope_match_value(value)
+    if not text:
+        return set()
+
+    keys = {text}
+    numeric = text
+    if numeric.isdigit():
+        keys.add(f"id:{numeric}")
+
+    plain = (
+        text.replace("á", "a")
+        .replace("é", "e")
+        .replace("í", "i")
+        .replace("ó", "o")
+        .replace("ú", "u")
+    )
+    if "mascul" in plain or "hombre" in plain:
+        keys.add("id:1")
+    if "femen" in plain or "mujer" in plain:
+        keys.add("id:2")
+    if "unisex" in plain:
+        keys.add("id:3")
+    if "arabe" in plain or "arabes" in plain:
+        keys.add("id:4")
+    if "disen" in plain:
+        keys.add("id:5")
+    if "nicho" in plain:
+        keys.add("id:6")
+    if "combo" in plain:
+        keys.add("id:7")
+    return keys
+
+
 def _serialize_coupon(raw: dict) -> dict:
     scope_type = _normalize_scope_type(raw.get("scope_type"))
     scope_values = _normalize_scope_values(raw.get("scope_values"))
@@ -218,7 +256,7 @@ def find_active_coupon(code: str) -> Optional[dict]:
 
 
 def _get_item_product(item: dict) -> Optional[Product]:
-    product_id = item.get("product_id") or item.get("id")
+    product_id = item.get("product_id") or item.get("productId") or item.get("id")
     try:
         product_id = int(product_id)
     except (TypeError, ValueError):
@@ -238,7 +276,7 @@ def _item_matches_coupon_scope(item: dict, coupon: dict) -> bool:
         product = _get_item_product(item)
         return bool(product.serialize().get("is_best_seller")) if product else False
 
-    scope_values = {str(value or "").strip().casefold() for value in coupon.get("scope_values") or []}
+    scope_values = {_normalize_scope_match_value(value) for value in coupon.get("scope_values") or []}
     scope_values.discard("")
     if not scope_values:
         return False
@@ -249,9 +287,15 @@ def _item_matches_coupon_scope(item: dict, coupon: dict) -> bool:
         if not brand:
             product = _get_item_product(item)
             brand = str(product.brand if product else "").strip()
-        return brand.casefold() in scope_values
+        return _normalize_scope_match_value(brand) in scope_values
 
     if scope_type == "category":
+        scope_values = set()
+        for value in coupon.get("scope_values") or []:
+            scope_values.update(_category_match_keys(value))
+        if not scope_values:
+            return False
+
         raw_category_ids = item.get("category_ids")
         if raw_category_ids is None:
             raw_category_ids = []
@@ -279,11 +323,9 @@ def _item_matches_coupon_scope(item: dict, coupon: dict) -> bool:
                 raw_category_ids = serialized.get("category_ids") or [serialized.get("category_id")]
                 category_names = serialized.get("category_names") or [serialized.get("category_name")]
 
-        item_values = {
-            str(value or "").strip().casefold()
-            for value in [*raw_category_ids, *category_names]
-            if str(value or "").strip()
-        }
+        item_values = set()
+        for value in [*raw_category_ids, *category_names]:
+            item_values.update(_category_match_keys(value))
         return bool(item_values & scope_values)
 
     return False

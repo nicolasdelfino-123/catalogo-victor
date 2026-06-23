@@ -493,7 +493,7 @@ export default function ProductGridNuevo({ category, hideFilters = false }) {
         }
 
         if (actions?.addToCart) {
-            actions.addToCart({ productId: product.id, qty: 1, flavor: null });
+            actions.addToCart(product, 1);
         } else {
             console.warn("addToCart no está definido en actions");
         }

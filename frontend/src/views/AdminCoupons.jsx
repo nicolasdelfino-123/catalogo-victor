@@ -247,7 +247,7 @@ export default function AdminCoupons() {
                 <div className="sm:col-span-4">
                     <span className="mb-2 block text-xs font-semibold uppercase text-gray-500">Aplicar cupón</span>
                     <div className="grid gap-2 sm:grid-cols-3">
-                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "all" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : ""}`}>
+                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "all" ? "border-emerald-800 bg-emerald-700 text-white" : ""}`}>
                             <input
                                 type="radio"
                                 name="coupon_scope"
@@ -257,7 +257,7 @@ export default function AdminCoupons() {
                             />
                             Todos los productos
                         </label>
-                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "brand" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : ""}`}>
+                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "brand" ? "border-emerald-800 bg-emerald-700 text-white" : ""}`}>
                             <input
                                 type="radio"
                                 name="coupon_scope"
@@ -267,7 +267,7 @@ export default function AdminCoupons() {
                             />
                             Por marca
                         </label>
-                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "category" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : ""}`}>
+                        <label className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm ${form.scope_type === "category" ? "border-emerald-800 bg-emerald-700 text-white" : ""}`}>
                             <input
                                 type="radio"
                                 name="coupon_scope"

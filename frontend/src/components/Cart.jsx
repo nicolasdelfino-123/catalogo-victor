@@ -38,13 +38,35 @@ const getSelectedMl = (it) => {
 };
 
 const normalizeScopeValue = (value = "") =>
-  String(value || "").trim().toLocaleLowerCase("es-AR");
+  String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("es-AR");
+
+const categoryMatchKeys = (value = "") => {
+  const text = normalizeScopeValue(value);
+  if (!text) return [];
+
+  const keys = new Set([text]);
+  if (/^\d+$/.test(text)) keys.add(`id:${text}`);
+
+  const plain = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (plain.includes("mascul") || plain.includes("hombre")) keys.add("id:1");
+  if (plain.includes("femen") || plain.includes("mujer")) keys.add("id:2");
+  if (plain.includes("unisex")) keys.add("id:3");
+  if (plain.includes("arabe")) keys.add("id:4");
+  if (plain.includes("disen")) keys.add("id:5");
+  if (plain.includes("nicho")) keys.add("id:6");
+  if (plain.includes("combo")) keys.add("id:7");
+  return [...keys];
+};
 
 const itemMatchesCouponScope = (item, coupon) => {
   const scopeType = coupon?.scope_type || "all";
   if (scopeType === "all") return true;
 
-  const scopeValues = new Set((coupon?.scope_values || []).map(normalizeScopeValue).filter(Boolean));
+  const scopeValues = new Set(
+    scopeType === "category"
+      ? (coupon?.scope_values || []).flatMap(categoryMatchKeys)
+      : (coupon?.scope_values || []).map(normalizeScopeValue).filter(Boolean)
+  );
   if (scopeValues.size === 0) return false;
 
   if (scopeType === "brand") {
@@ -58,7 +80,7 @@ const itemMatchesCouponScope = (item, coupon) => {
       ...(Array.isArray(item?.category_ids) ? item.category_ids : []),
       ...(Array.isArray(item?.category_names) ? item.category_names : []),
     ];
-    return rawValues.some((value) => scopeValues.has(normalizeScopeValue(value)));
+    return rawValues.some((value) => categoryMatchKeys(value).some((key) => scopeValues.has(key)));
   }
 
   if (scopeType === "best_seller") {
@@ -131,6 +153,11 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
   const isWholesale = location.pathname.startsWith("/mayorista");
   const pricePrefix = isWholesale ? "$" : "$";
 
+  const getCartProduct = (item) => {
+    const productId = item?.id ?? item?.product_id ?? item?.productId;
+    return (store.products || []).find((product) => String(product.id) === String(productId)) || null;
+  };
+
 
   const isRouteMode = controlledOpen === undefined && controlledOnClose === undefined;
   const [internalOpen, setInternalOpen] = useState(true);
@@ -147,8 +174,9 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
 
   // devuelve precio correcto según modo
   const getItemPrice = (item) => {
-    const wholesalePrice = Number(item.price_wholesale);
-    const retailPrice = Number(item.price);
+    const product = getCartProduct(item);
+    const wholesalePrice = Number(item.price_wholesale ?? product?.price_wholesale);
+    const retailPrice = Number(item.price ?? product?.price);
 
     if (isWholesale) {
       if (wholesalePrice > 0) return wholesalePrice;
@@ -172,29 +200,33 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
     return sum + price * (Number(item.quantity) || 0);
   }, 0);
 
-  const buildCouponItems = () => (store.cart || []).map((item) => ({
-    product_id: item.id || item.product_id,
-    id: item.id,
-    quantity: Number(item.quantity) || 0,
-    price: getItemPrice(item) || 0,
-    brand: item.brand || item.product_brand || item.marca || item.product?.brand || "",
-    category_id: item.category_id || item.product?.category_id || null,
-    category_ids: item.category_ids || item.product?.category_ids || [],
-    category_name: item.category_name || item.product?.category_name || "",
-    category_names: item.category_names || item.product?.category_names || [],
-    is_best_seller: Boolean(item.is_best_seller || item.product?.is_best_seller),
-  }));
+  const buildCouponItem = (item) => {
+    const product = getCartProduct(item);
+    const productId = item.id || item.product_id || item.productId || product?.id;
+    return {
+      product_id: productId,
+      id: productId,
+      quantity: Number(item.quantity) || 0,
+      price: getItemPrice(item) || 0,
+      brand: item.brand || item.product_brand || item.marca || item.product?.brand || product?.brand || "",
+      category_id: item.category_id || item.product?.category_id || product?.category_id || null,
+      category_ids: item.category_ids || item.product?.category_ids || product?.category_ids || [],
+      category_name: item.category_name || item.product?.category_name || product?.category_name || "",
+      category_names: item.category_names || item.product?.category_names || product?.category_names || [],
+      is_best_seller: Boolean(item.is_best_seller || item.product?.is_best_seller || product?.is_best_seller),
+    };
+  };
+
+  const buildCouponItems = () => (store.cart || []).map(buildCouponItem);
 
   const couponTotals = appliedCoupon
     ? (() => {
       const subtotal = Math.round(total);
       const percent = Number(appliedCoupon.percent) || 0;
       const eligibleSubtotal = (appliedCoupon.scope_type && appliedCoupon.scope_type !== "all")
-        ? Math.round((store.cart || []).reduce((sum, item) => {
+        ? Math.round(buildCouponItems().reduce((sum, item) => {
           if (!itemMatchesCouponScope(item, appliedCoupon)) return sum;
-          const price = getItemPrice(item);
-          if (price === null) return sum;
-          return sum + price * (Number(item.quantity) || 0);
+          return sum + (Number(item.price) || 0) * (Number(item.quantity) || 0);
         }, 0))
         : subtotal;
       const discount = Math.round(eligibleSubtotal * percent / 100);
@@ -207,7 +239,24 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
       };
     })()
     : null;
+  const isScopedCoupon = couponTotals?.scope_type && couponTotals.scope_type !== "all";
   const finalTotal = couponTotals ? couponTotals.total : Math.round(total);
+
+  const getItemCouponTotals = (item) => {
+    if (!couponTotals || !isScopedCoupon) return null;
+    const couponItem = buildCouponItem(item);
+    if (!itemMatchesCouponScope(couponItem, couponTotals)) return null;
+
+    const original = (Number(couponItem.price) || 0) * (Number(couponItem.quantity) || 0);
+    if (original <= 0) return null;
+
+    const discount = Math.round(original * (Number(couponTotals.percent) || 0) / 100);
+    return {
+      original,
+      discount,
+      total: Math.max(0, original - discount),
+    };
+  };
 
   const applyCoupon = async () => {
     const code = normalizeCouponCode(couponCode);
@@ -297,7 +346,11 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
     if (hasUnknownPrice) {
       message += "*TOTAL:* Consultar\n\n";
     } else if (couponTotals) {
-      message += `*Subtotal original:* ~${pricePrefix}${Math.round(total).toLocaleString("es-AR")}~\n`;
+      if (isScopedCoupon) {
+        message += `*Subtotal productos con cupón:* ${pricePrefix}${couponTotals.eligible_subtotal.toLocaleString("es-AR")}\n`;
+      } else {
+        message += `*Subtotal original:* ~${pricePrefix}${Math.round(total).toLocaleString("es-AR")}~\n`;
+      }
       message += `*Cupón ${couponTotals.code} (${couponTotals.percent}% OFF):* -${pricePrefix}${couponTotals.discount.toLocaleString("es-AR")}\n`;
       message += `*TOTAL CON DESCUENTO:* ${pricePrefix}${couponTotals.total.toLocaleString("es-AR")}\n\n`;
     } else {
@@ -368,21 +421,25 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
     // 🔹 Construir items del pedido
     const isWholesale = window.location.pathname.startsWith("/mayorista");
 
-    const orderItems = store.cart.map(item => ({
-      product_id: item.id,   // 👈 obligatorio
-      quantity: item.quantity,
-      price: isWholesale
-        ? (Number(item.price_wholesale) > 0 ? Number(item.price_wholesale) : 0)
-        : (Number(item.price) > 0 ? Number(item.price) : 0),
-      selected_flavor: item.selectedFlavor || null,
-      selected_size_ml: getSelectedMl(item),
-      brand: item.brand || item.product_brand || item.marca || item.product?.brand || "",
-      category_id: item.category_id || item.product?.category_id || null,
-      category_ids: item.category_ids || item.product?.category_ids || [],
-      category_name: item.category_name || item.product?.category_name || "",
-      category_names: item.category_names || item.product?.category_names || [],
-      is_best_seller: Boolean(item.is_best_seller || item.product?.is_best_seller)
-    }));
+    const orderItems = store.cart.map(item => {
+      const product = getCartProduct(item);
+      const productId = item.id || item.product_id || item.productId || product?.id;
+      return {
+        product_id: productId,   // 👈 obligatorio
+        quantity: item.quantity,
+        price: isWholesale
+          ? (Number(item.price_wholesale ?? product?.price_wholesale) > 0 ? Number(item.price_wholesale ?? product?.price_wholesale) : 0)
+          : (Number(item.price ?? product?.price) > 0 ? Number(item.price ?? product?.price) : 0),
+        selected_flavor: item.selectedFlavor || null,
+        selected_size_ml: getSelectedMl(item),
+        brand: item.brand || item.product_brand || item.marca || item.product?.brand || product?.brand || "",
+        category_id: item.category_id || item.product?.category_id || product?.category_id || null,
+        category_ids: item.category_ids || item.product?.category_ids || product?.category_ids || [],
+        category_name: item.category_name || item.product?.category_name || product?.category_name || "",
+        category_names: item.category_names || item.product?.category_names || product?.category_names || [],
+        is_best_seller: Boolean(item.is_best_seller || item.product?.is_best_seller || product?.is_best_seller)
+      };
+    });
 
     if (window.gtag) {
       window.gtag("event", "solicito_pedido_whatsapp", {
@@ -520,6 +577,7 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
                 : (Number.isFinite(Number(item?.stock)) ? Number(item.stock) : 0);
 
               const atLimit = Number(item.quantity || 0) >= Number(max || 0);
+              const itemCouponTotals = getItemCouponTotals(item);
 
               return (
                 <div key={`${item.id}-${item.selectedFlavor || 'default'}-${getSelectedMl(item) || 'na'}`} className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
@@ -602,7 +660,18 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
 
                         <div className="text-right font-semibold">
                           {getItemPrice(item) !== null
-                            ? `${pricePrefix}${(getItemPrice(item) * Number(item.quantity || 0)).toLocaleString("es-AR")}`
+                            ? itemCouponTotals
+                              ? (
+                                <>
+                                  <span className="block text-xs font-normal text-gray-400 line-through">
+                                    {pricePrefix}{itemCouponTotals.original.toLocaleString("es-AR")}
+                                  </span>
+                                  <span className="block text-emerald-700">
+                                    {pricePrefix}{itemCouponTotals.total.toLocaleString("es-AR")}
+                                  </span>
+                                </>
+                              )
+                              : `${pricePrefix}${(getItemPrice(item) * Number(item.quantity || 0)).toLocaleString("es-AR")}`
                             : "Consultar"}
                         </div>
 
@@ -640,6 +709,7 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
             loading={validatingCoupon}
             subtotal={total}
             pricePrefix={pricePrefix}
+            scoped={isScopedCoupon}
           />
         )}
 
@@ -682,7 +752,7 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
           <div className="flex items-center justify-between mb-4">
             <span className="text-xl font-semibold">Total:</span>
             <span className="text-right text-2xl font-semibold text-gray-900 font-serif tracking-wide">
-              {couponTotals && (
+              {couponTotals && !isScopedCoupon && (
                 <span className="block text-sm font-sans font-normal text-gray-400 line-through">
                   {pricePrefix}{Math.round(total).toLocaleString("es-AR")}
                 </span>

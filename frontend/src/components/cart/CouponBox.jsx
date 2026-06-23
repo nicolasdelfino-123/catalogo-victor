@@ -10,6 +10,7 @@ export default function CouponBox({
     loading,
     subtotal,
     pricePrefix = "$",
+    scoped = false,
 }) {
     return (
         <div className="rounded-lg border bg-white p-3 shadow-sm">
@@ -65,9 +66,9 @@ export default function CouponBox({
             {appliedCoupon && (
                 <div className="mt-3 space-y-1 border-t pt-3 text-sm">
                     <div className="flex justify-between text-gray-500">
-                        <span>Subtotal original</span>
-                        <span className="line-through">
-                            {pricePrefix}{formatCouponMoney(appliedCoupon.subtotal)}
+                        <span>{scoped ? "Subtotal con cupón" : "Subtotal original"}</span>
+                        <span className={scoped ? "" : "line-through"}>
+                            {pricePrefix}{formatCouponMoney(scoped ? appliedCoupon.eligible_subtotal : appliedCoupon.subtotal)}
                         </span>
                     </div>
                     <div className="flex justify-between text-emerald-700">

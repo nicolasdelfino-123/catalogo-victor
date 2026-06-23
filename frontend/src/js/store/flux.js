@@ -580,7 +580,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 						throw new Error('Error al obtener productos');
 					}
 					const products = await response.json();
-					setStore({ ...store, products, loading: false });
+					const cart = (store.cart || []).map((item) => {
+						const productId = item?.id ?? item?.product_id ?? item?.productId;
+						const product = products.find((p) => String(p.id) === String(productId));
+						return product ? { ...product, ...item, id: product.id } : item;
+					});
+					setStore({ ...store, products, cart, loading: false });
 					return { success: true, data: products };
 				} catch (error) {
 					console.error("Error fetching products:", error);
@@ -630,6 +635,19 @@ const getState = ({ getStore, getActions, setStore }) => {
 				const store = getStore();
 				const actions = getActions();
 				const currentCart = store.cart || [];
+				const productId = product?.id ?? product?.product_id ?? product?.productId;
+				const fullProduct = product?.id
+					? product
+					: ((store.products || []).find((p) => String(p.id) === String(productId)) || product);
+				product = {
+					...fullProduct,
+					...(product || {}),
+					id: fullProduct?.id ?? productId,
+					selectedFlavor: product?.selectedFlavor ?? product?.flavor ?? null,
+				};
+				if (product.qty && quantity === 1) {
+					quantity = Number(product.qty) || 1;
+				}
 				const flavorKey = product.selectedFlavor || '';
 				const sizeKey = product.selected_size_ml ?? product.volume_ml ?? null;
 
@@ -759,7 +777,14 @@ const getState = ({ getStore, getActions, setStore }) => {
 						const parsed = JSON.parse(local);
 						console.log("💧 [FLUX] Carrito parseado:", parsed.length, "items");
 						const store = getStore();
-						setStore({ ...store, cart: parsed });   // 👈 preserva el store
+						const hydratedCart = Array.isArray(parsed)
+							? parsed.map((item) => {
+								const productId = item?.id ?? item?.product_id ?? item?.productId;
+								const product = (store.products || []).find((p) => String(p.id) === String(productId));
+								return product ? { ...product, ...item, id: product.id } : item;
+							})
+							: [];
+						setStore({ ...store, cart: hydratedCart });   // 👈 preserva el store
 					} catch (err) {
 						console.error("❌ [FLUX] Error parseando cart:", err);
 						const store = getStore();

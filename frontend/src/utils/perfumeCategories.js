@@ -1,4 +1,5 @@
 export const PERFUME_CATEGORY_DEFINITIONS = [
+    { id: 8, name: "Últimos Ingresos", slug: "ultimos-ingresos" },
     { id: 0, name: "Más Vendidos", slug: "mas-vendidos" },
     { id: 1, name: "Fragancias Masculinas", slug: "fragancias-masculinas" },
     { id: 2, name: "Fragancias Femeninas", slug: "fragancias-femeninas" },
@@ -9,6 +10,20 @@ export const PERFUME_CATEGORY_DEFINITIONS = [
     { id: 7, name: "Combos", slug: "combos" },
 ];
 
+export const LATEST_ARRIVALS_CATEGORY_ID = 8;
+export const LATEST_ARRIVALS_CATEGORY_SLUG = "ultimos-ingresos";
+
+export const sortNewestProducts = (products = []) => (
+    [...products].sort((a, b) => {
+        const dateA = Date.parse(a?.created_at || "");
+        const dateB = Date.parse(b?.created_at || "");
+        if (Number.isFinite(dateA) && Number.isFinite(dateB) && dateA !== dateB) {
+            return dateB - dateA;
+        }
+        return (Number(b?.id) || 0) - (Number(a?.id) || 0);
+    })
+);
+
 export const PERFUME_CATEGORY_NAMES = PERFUME_CATEGORY_DEFINITIONS.map((category) => category.name);
 
 export const CATEGORY_ID_TO_NAME = PERFUME_CATEGORY_DEFINITIONS.reduce(
@@ -17,6 +32,8 @@ export const CATEGORY_ID_TO_NAME = PERFUME_CATEGORY_DEFINITIONS.reduce(
 );
 
 export const CATEGORY_NAME_TO_ID = {
+    "Últimos Ingresos": 8,
+    "Ultimos Ingresos": 8,
     "Más Vendidos": 0,
     "Mas Vendidos": 0,
     "Fragancias Masculinas": 1,
@@ -39,6 +56,7 @@ export const CATEGORY_NAME_TO_ID = {
 };
 
 export const LEGACY_CATEGORY_NAME_TO_CURRENT = {
+    "Ultimos Ingresos": "Últimos Ingresos",
     "Fragancias de Hombre": "Fragancias Masculinas",
     "Fragancias de Mujer": "Fragancias Femeninas",
     "Productos Karseell": "Fragancias Unisex",
@@ -88,6 +106,8 @@ export const SLUG_TO_ID = PERFUME_CATEGORY_DEFINITIONS.reduce(
 );
 
 export const NAME_TO_SLUG = {
+    "Últimos Ingresos": "ultimos-ingresos",
+    "Ultimos Ingresos": "ultimos-ingresos",
     "Más Vendidos": "mas-vendidos",
     "Mas Vendidos": "mas-vendidos",
     "Fragancias Masculinas": "fragancias-masculinas",
@@ -124,6 +144,8 @@ export const mapCategoryIdFromName = (value = "") => {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 
+    if (normalized.includes("ultimo ingreso")) return 8;
+    if (normalized.includes("ultimos ingresos")) return 8;
     if (normalized.includes("mas vendido")) return 1;
     if (normalized.includes("mascul")) return 1;
     if (normalized.includes("hombre")) return 1;

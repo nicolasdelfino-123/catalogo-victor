@@ -93,6 +93,8 @@ def _category_match_keys(value) -> set[str]:
         keys.add("id:6")
     if "combo" in plain:
         keys.add("id:7")
+    if "ultimo ingreso" in plain or "ultimos ingresos" in plain:
+        keys.add("id:8")
     return keys
 
 

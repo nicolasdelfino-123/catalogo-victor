@@ -12,6 +12,7 @@ import {
     saveBestSellerProductIds,
     setProductBestSellerStatus,
 } from "../utils/bestSellers.js";
+import { isHomeFeaturedProduct } from "../utils/homeFeatured.js";
 import {
     CATEGORY_ID_TO_NAME as ID_TO_CATEGORY_NAME,
     getDisplayCategoryNames,
@@ -436,6 +437,7 @@ export default function AdminProducts() {
     const [products, setProducts] = useState([])
     const categories = PERFUME_CATEGORY_NAMES
     const [bestSellerIds, setBestSellerIds] = useState(() => getBestSellerProductIds())
+    const [homeFeaturedIds, setHomeFeaturedIds] = useState([])
     const [form, setForm] = useState(null)
     const [q, setQ] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("Todos")
@@ -507,11 +509,18 @@ export default function AdminProducts() {
                     .filter((id) => Number.isFinite(id) && id > 0)
                 const storedIds = saveBestSellerProductIds(backendIds)
                 const storedIdSet = new Set(storedIds)
+                const nextHomeFeaturedIds = (data || [])
+                    .filter((product) => Boolean(product?.is_home_featured))
+                    .sort((a, b) => (Number(a?.home_featured_position) || 0) - (Number(b?.home_featured_position) || 0))
+                    .map((product) => Number(product?.id))
+                    .filter((id) => Number.isFinite(id) && id > 0)
                 setBestSellerIds(storedIds)
+                setHomeFeaturedIds(nextHomeFeaturedIds)
                 setProducts(
                     (data || []).map((product) => ({
                         ...product,
                         is_best_seller: isBestSellerProduct(product, storedIdSet),
+                        is_home_featured: Boolean(product?.is_home_featured),
                     }))
                 )
             }
@@ -574,6 +583,47 @@ export default function AdminProducts() {
         } catch (error) {
             console.error("Error updating best seller status:", error);
             alert("No se pudo actualizar \"Más Vendidos\".");
+        }
+    };
+
+    const handleHomeFeaturedToggle = async (productId, checked) => {
+        if (checked && !homeFeaturedIds.includes(Number(productId)) && homeFeaturedIds.length >= 12) {
+            alert("Solo podés seleccionar hasta 12 productos para Inicio.");
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API}/admin/products/${productId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ is_home_featured: Boolean(checked) }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                alert(`No se pudo actualizar "Inicio": ${data?.error || res.statusText}`);
+                return;
+            }
+
+            const numericId = Number(productId);
+            const nextIds = checked
+                ? [...homeFeaturedIds.filter((id) => id !== numericId), numericId].slice(0, 12)
+                : homeFeaturedIds.filter((id) => id !== numericId);
+
+            setHomeFeaturedIds(nextIds);
+            setProducts((prev) =>
+                prev.map((prod) =>
+                    Number(prod.id) === numericId
+                        ? { ...prod, is_home_featured: Boolean(checked), home_featured_position: checked ? nextIds.indexOf(numericId) : null }
+                        : prod
+                )
+            );
+        } catch (error) {
+            console.error("Error updating home featured status:", error);
+            alert("No se pudo actualizar \"Inicio\".");
         }
     };
 
@@ -969,7 +1019,7 @@ export default function AdminProducts() {
                 if (u.startsWith("/")) return normalizeImagePath(u); // relativo válido → normaliza /public
                 return "";                                     // invalida textos sueltos (evita 404 /frutal)
             })();
-            const { image_urls, volume_stock, is_best_seller, ...cleanForm } = form;
+            const { image_urls, volume_stock, is_best_seller, is_home_featured, ...cleanForm } = form;
             const categoryIds = normalizeCategoryIds(form.category_ids || form.category_id);
             const allVolumeOptions = normalizeVolumeOptions(form.volume_options || [], { keepWithoutMl: true });
             const fallbackRetail = Number(
@@ -992,6 +1042,7 @@ export default function AdminProducts() {
                 category_id: categoryIds[0] || cleanForm.category_id,
                 category_ids: categoryIds,
                 is_best_seller: Boolean(is_best_seller),
+                is_home_featured: Boolean(is_home_featured),
                 price:
                     Number.isFinite(directRetail) && directRetail > 0
                         ? directRetail
@@ -1033,6 +1084,13 @@ export default function AdminProducts() {
             const persistedProductId = Number(form.id || json?.product?.id);
             const nextBestSellerIds = setProductBestSellerStatus(persistedProductId, Boolean(is_best_seller));
             setBestSellerIds(nextBestSellerIds);
+            if (persistedProductId) {
+                setHomeFeaturedIds((prev) => (
+                    Boolean(is_home_featured)
+                        ? [...prev.filter((id) => id !== persistedProductId), persistedProductId].slice(0, 12)
+                        : prev.filter((id) => id !== persistedProductId)
+                ));
+            }
 
             // ✅ Si es creación, ATAMOS las imágenes subidas antes de tener id
             if (!form.id) {
@@ -1219,7 +1277,9 @@ export default function AdminProducts() {
 
         const matchesCategory =
             selectedCategory === "Todos" ||
-            (normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Más Vendidos")
+            (normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Inicio")
+                ? isHomeFeaturedProduct(p)
+                : normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Más Vendidos")
                 ? isBestSellerProduct(p, bestSellerIds)
                 : (() => {
                     const selectedCategoryId = mapCategoryIdFromName(selectedCategory);
@@ -1343,6 +1403,7 @@ export default function AdminProducts() {
                         className="border rounded px-3 py-2 sm:w-48"
                     >
                         <option value="Todos">Todas las categorías</option>
+                        <option value="Inicio">Inicio</option>
                         {categories.map((cat) => (
                             <option key={cat} value={cat}>
                                 {cat}
@@ -1405,6 +1466,7 @@ export default function AdminProducts() {
                         category_picker_id: "",
                         is_active: true,
                         is_best_seller: false,
+                        is_home_featured: false,
 
                         image_url: "",
                         image_urls: [],
@@ -1580,6 +1642,7 @@ export default function AdminProducts() {
 
                             <th className="hidden p-2 md:table-cell">Stock</th>
                             <th className="hidden p-2 md:table-cell">Categoría</th>
+                            <th className="hidden p-2 text-center md:table-cell">Inicio</th>
                             <th className="hidden p-2 text-center md:table-cell">Más vendidos</th>
                             {/*  <th className="p-2">Sabores</th> */}
                             <th className="hidden p-2 md:table-cell">Estado</th>
@@ -1600,7 +1663,7 @@ export default function AdminProducts() {
                                     ? Number(selectedOption.stock)
                                     : (Number.isFinite(Number(p?.stock)) ? Number(p.stock) : 0);
                             const isMobileExpanded = expandedMobileProductId === p.id;
-                            const tableColSpan = budgetMode ? 13 : 11;
+                            const tableColSpan = budgetMode ? 14 : 12;
 
                             return (
                                 <Fragment key={p.id}>
@@ -1800,6 +1863,14 @@ export default function AdminProducts() {
                                         <td className="hidden p-2 text-center md:table-cell">
                                             <input
                                                 type="checkbox"
+                                                className="h-4 w-4 accent-emerald-600"
+                                                checked={Boolean(isHomeFeaturedProduct(p))}
+                                                onChange={(e) => handleHomeFeaturedToggle(p.id, e.target.checked)}
+                                            />
+                                        </td>
+                                        <td className="hidden p-2 text-center md:table-cell">
+                                            <input
+                                                type="checkbox"
                                                 checked={Boolean(isBestSellerProduct(p, bestSellerIds))}
                                                 onChange={(e) => handleBestSellerToggle(p.id, e.target.checked)}
                                             />
@@ -1950,6 +2021,7 @@ export default function AdminProducts() {
                                                             category_ids: categoryIds,
                                                             category_picker_id: categoryIds[0] || p.category_id || "",
                                                             is_best_seller: Boolean(isBestSellerProduct(p, bestSellerIds)),
+                                                            is_home_featured: Boolean(isHomeFeaturedProduct(p)),
                                                             price: "",
                                                             price_wholesale: "",
                                                             volume_ml: "",
@@ -2023,6 +2095,17 @@ export default function AdminProducts() {
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Categoria</div>
                                                         <div className="mt-1">{formatCategoryList(p)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs uppercase tracking-wide text-gray-500">Inicio</div>
+                                                        <div className="mt-1">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="h-4 w-4 accent-emerald-600"
+                                                                checked={Boolean(isHomeFeaturedProduct(p))}
+                                                                onChange={(e) => handleHomeFeaturedToggle(p.id, e.target.checked)}
+                                                            />
+                                                        </div>
                                                     </div>
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Más vendidos</div>
@@ -2818,6 +2901,16 @@ export default function AdminProducts() {
                                 onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                             />
                             Producto activo
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                className="accent-emerald-600"
+                                checked={form.is_home_featured ?? false}
+                                onChange={(e) => setForm({ ...form, is_home_featured: e.target.checked })}
+                            />
+                            Inicio
                         </label>
 
                         <label className="flex items-center gap-2">

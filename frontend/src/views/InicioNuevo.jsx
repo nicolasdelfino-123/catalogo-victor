@@ -6,6 +6,7 @@ import HomeContact from "../components/home/HomeContact.jsx";
 import banner from "../assets/banner_arabe.jpg";
 import Asesoria from "../components/Asesoria.jsx";
 import { storeConfig } from "../config/storeConfig";
+import { isHomeFeaturedProduct, sortHomeFeaturedProducts } from "../utils/homeFeatured.js";
 import perfumeImg from "../assets/latta_si.webp";
 
 import afnan from '../assets/afnan.webp'
@@ -70,11 +71,13 @@ export default function InicioNuevo() {
         .sort((a, b) => getProductPrice(a) - getProductPrice(b))
         .slice(0, 6);
     const selectedFeaturedIds = new Set([...womenFeatured, ...menFeatured].map((p) => p.id));
-    const featuredProducts = [
+    const selectedHomeFeatured = sortHomeFeaturedProducts(allProducts.filter(isHomeFeaturedProduct)).slice(0, 12);
+    const fallbackFeaturedProducts = [
         ...womenFeatured,
         ...menFeatured,
         ...allProducts.filter((p) => !selectedFeaturedIds.has(p.id)).slice(0, Math.max(0, 12 - (womenFeatured.length + menFeatured.length))),
     ].slice(0, 12);
+    const featuredProducts = selectedHomeFeatured.length > 0 ? selectedHomeFeatured : fallbackFeaturedProducts;
 
 
     useLayoutEffect(() => {

@@ -8,6 +8,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models import Product, Category, User,ProductImage,now_cba_naive
 from app.best_sellers_store import set_best_seller_status
+from app.home_featured_store import load_home_featured_ids, set_home_featured_status
 from flask import current_app, send_from_directory, url_for
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps # pip install pillow
@@ -30,6 +31,7 @@ ADMIN_HIDDEN_PRODUCT_KEY = "is_active_product"
 # Catálogo de categorías esperado por el frontend actual.
 # Mantener IDs estables evita romper FK y filtros ya existentes.
 CATEGORY_ID_TO_NAME = {
+    8: "Últimos Ingresos",
     1: "Fragancias Masculinas",
     2: "Fragancias Femeninas",
     3: "Fragancias Unisex",
@@ -98,6 +100,19 @@ def _serialize_admin_order(o):
             o.shipping_address.get("postalCode") if isinstance(o.shipping_address, dict) else None
         ),
     }
+
+
+def _with_home_featured_flags(serialized_products):
+    ids = load_home_featured_ids()
+    positions = {product_id: index for index, product_id in enumerate(ids)}
+    for item in serialized_products:
+        try:
+            product_id = int(item.get("id"))
+        except Exception:
+            product_id = 0
+        item["is_home_featured"] = product_id in positions
+        item["home_featured_position"] = positions.get(product_id)
+    return serialized_products
 
 # === Helpers de sabores/stock por sabor ===
 def _normalize_catalog(catalog):
@@ -353,9 +368,16 @@ def create_product():
             created_at=now_cba_naive(),
         )
         db.session.add(product)
-        db.session.commit()
+        db.session.flush()
+        if 'is_home_featured' in data:
+            try:
+                set_home_featured_status(product.id, bool(data.get('is_home_featured')))
+            except ValueError as exc:
+                db.session.rollback()
+                return jsonify({'error': str(exc)}), 400
         if 'is_best_seller' in data:
             set_best_seller_status(product.id, bool(data.get('is_best_seller')))
+        db.session.commit()
         return jsonify({'message': 'Producto creado exitosamente', 'product': product.serialize()}), 201
 
     except Exception as e:
@@ -411,6 +433,11 @@ def update_product(product_id):
             product.is_active = bool(data['is_active'])
         if 'is_best_seller' in data:
             set_best_seller_status(product.id, bool(data.get('is_best_seller')))
+        if 'is_home_featured' in data:
+            try:
+                set_home_featured_status(product.id, bool(data.get('is_home_featured')))
+            except ValueError as exc:
+                return jsonify({'error': str(exc)}), 400
             # 👇 NUEVO: puffs (caladas)
         if 'puffs' in data:
             v = str(data.get('puffs','')).strip()
@@ -497,6 +524,7 @@ def delete_product(product_id):
 
         product.flavor_catalog = _catalog_with_product_hidden_marker(product.flavor_catalog)
         flag_modified(product, "flavor_catalog")
+        set_home_featured_status(product_id, False)
 
         db.session.commit()
         return jsonify({'message': 'Producto ocultado', 'product_id': product_id}), 200
@@ -515,7 +543,7 @@ def get_all_products_admin():
     
     try:
         products = [product for product in Product.query.all() if not _is_product_hidden_from_admin(product)]
-        return jsonify([product.serialize() for product in products]), 200
+        return jsonify(_with_home_featured_flags([product.serialize() for product in products])), 200
         
     except Exception as e:
         return jsonify({'error': f'Error al obtener productos: {str(e)}'}), 500

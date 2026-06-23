@@ -14,6 +14,11 @@ const link = `https://wa.me/${phone}?text=${message}`;
 
 const Footer = () => {
     const navigate = useNavigate();
+    const footerCategoryColumns = [
+        FOOTER_CATEGORIES.filter((category) => !["fragancias-unisex", "perfumes-arabes", "perfumes-de-disenador", "perfumes-de-nicho", "combos"].includes(category.slug)),
+        FOOTER_CATEGORIES.filter((category) => ["fragancias-unisex", "perfumes-arabes", "perfumes-de-disenador", "perfumes-de-nicho", "combos"].includes(category.slug)),
+    ];
+
     return (
         <div>
             <footer className="bg-[#0b0b0d] text-gray-300 py-12 font-serif">
@@ -34,20 +39,24 @@ const Footer = () => {
 
                         {/* 🟢 Productos */}
                         <div>
-                            <h4 className="font-semibold mb-4 uppercase tracking-wider text-sm text-gray-200">Productos</h4>
-                            <ul className="space-y-2 text-gray-400">
-                                {FOOTER_CATEGORIES.map((c) => (
-                                    <li key={c.slug}>
-                                        <Link
-                                            to={withWholesale(`/categoria/${c.slug}`)}
-                                            state={{ fromFooter: true }}     // 👈 Marca que viene desde el footer
-                                            className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
-                                        >
-                                            {c.name}
-                                        </Link>
-                                    </li>
+                            <h4 className="font-semibold mb-4 text-center uppercase tracking-wider text-sm text-gray-200">Productos</h4>
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-center md:text-left">
+                                {footerCategoryColumns.map((column, index) => (
+                                    <ul key={index} className="space-y-2 text-gray-400">
+                                        {column.map((c) => (
+                                            <li key={c.slug}>
+                                                <Link
+                                                    to={withWholesale(`/categoria/${c.slug}`)}
+                                                    state={{ fromFooter: true }}     // 👈 Marca que viene desde el footer
+                                                    className="relative hover:text-amber-300 transition-all duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full"
+                                                >
+                                                    {c.name}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
 
                         {/*   <div>

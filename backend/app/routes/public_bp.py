@@ -7,12 +7,40 @@ from app.models import ProductImage
 import hashlib
 import json
 from sqlalchemy.orm.attributes import flag_modified
+from app.home_featured_store import load_home_featured_ids
 
 import smtplib
 import os
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from flask import Blueprint, request, jsonify
+from datetime import datetime
+
+LATEST_ARRIVALS_CATEGORY_ID = 8
+
+
+def _sort_latest_arrivals(products):
+    return sorted(
+        products,
+        key=lambda product: (
+            product.created_at or datetime.min,
+            product.id or 0,
+        ),
+        reverse=True,
+    )
+
+
+def _with_home_featured_flags(serialized_products):
+    ids = load_home_featured_ids()
+    positions = {product_id: index for index, product_id in enumerate(ids)}
+    for item in serialized_products:
+        try:
+            product_id = int(item.get("id"))
+        except Exception:
+            product_id = 0
+        item["is_home_featured"] = product_id in positions
+        item["home_featured_position"] = positions.get(product_id)
+    return serialized_products
 
 
 def _is_product_hidden(product):
@@ -58,8 +86,11 @@ def get_products():
             query = query.filter(Product.name.ilike(f'%{search}%'))
         
         products = [product for product in query.all() if not _is_product_hidden(product)]
-        serialized_products = [product.serialize() for product in products]
+        serialized_products = _with_home_featured_flags([product.serialize() for product in products])
         if category_id:
+            if category_id == LATEST_ARRIVALS_CATEGORY_ID:
+                products = _sort_latest_arrivals(products)
+                serialized_products = _with_home_featured_flags([product.serialize() for product in products])
             serialized_products = [
                 product for product in serialized_products
                 if int(category_id) in {int(x) for x in (product.get('category_ids') or [product.get('category_id')])}
@@ -83,7 +114,7 @@ def get_product_by_id(product_id):
         if _is_product_hidden(product):
             return jsonify({'error': 'Producto no encontrado'}), 404
             
-        return jsonify(product.serialize()), 200
+        return jsonify(_with_home_featured_flags([product.serialize()])[0]), 200
         
     except Exception as e:
         return jsonify({'error': 'Error al obtener producto: ' + str(e)}), 500
@@ -110,7 +141,9 @@ def get_products_by_category(category_id):
             Product.is_active == True
         ).all()
         products = [product for product in products if not _is_product_hidden(product)]
-        serialized_products = [product.serialize() for product in products]
+        if category_id == LATEST_ARRIVALS_CATEGORY_ID:
+            products = _sort_latest_arrivals(products)
+        serialized_products = _with_home_featured_flags([product.serialize() for product in products])
         serialized_products = [
             product for product in serialized_products
             if int(category_id) in {int(x) for x in (product.get('category_ids') or [product.get('category_id')])}

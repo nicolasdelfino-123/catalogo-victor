@@ -240,6 +240,7 @@ export default function Header() {
 
   // Categorías para el dropdown (coinciden con las del backend)
   const categoryIcons = {
+    8: "🆕",
     0: "🔥",
     1: "🕴️",
     2: "🌸",

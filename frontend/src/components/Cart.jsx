@@ -55,6 +55,7 @@ const categoryMatchKeys = (value = "") => {
   if (plain.includes("disen")) keys.add("id:5");
   if (plain.includes("nicho")) keys.add("id:6");
   if (plain.includes("combo")) keys.add("id:7");
+  if (plain.includes("ultimo ingreso") || plain.includes("ultimos ingresos")) keys.add("id:8");
   return [...keys];
 };
 

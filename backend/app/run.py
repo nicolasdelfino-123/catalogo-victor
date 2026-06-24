@@ -18,6 +18,14 @@ def serve_frontend_index():
 def serve_frontend():
     return serve_frontend_index()
 
+@app.route("/version.json")
+def serve_version_file():
+    response = make_response(send_from_directory(app.static_folder, "version.json"))
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 @app.route("/product/<int:product_id>")
 def serve_product_page(product_id):
     if is_social_crawler():

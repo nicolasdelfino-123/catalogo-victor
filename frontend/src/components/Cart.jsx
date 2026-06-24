@@ -304,10 +304,11 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
   };
 
 
-  const buildWhatsAppMessage = () => {
+  const buildWhatsAppMessage = (activeCouponTotals = couponTotals) => {
     if (!store.cart || store.cart.length === 0) return "";
 
     const isWholesale = window.location.pathname.startsWith("/mayorista");
+    const activeIsScopedCoupon = activeCouponTotals?.scope_type && activeCouponTotals.scope_type !== "all";
 
     let message = isWholesale
       ? "Hola! Quiero hacer el siguiente pedido:\n*PEDIDO MAYORISTA*\n\n"
@@ -346,14 +347,14 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
 
     if (hasUnknownPrice) {
       message += "*TOTAL:* Consultar\n\n";
-    } else if (couponTotals) {
-      if (isScopedCoupon) {
-        message += `*Subtotal productos con cupón:* ${pricePrefix}${couponTotals.eligible_subtotal.toLocaleString("es-AR")}\n`;
+    } else if (activeCouponTotals) {
+      if (activeIsScopedCoupon) {
+        message += `*Subtotal productos con cupón:* ${pricePrefix}${activeCouponTotals.eligible_subtotal.toLocaleString("es-AR")}\n`;
       } else {
         message += `*Subtotal original:* ~${pricePrefix}${Math.round(total).toLocaleString("es-AR")}~\n`;
       }
-      message += `*Cupón ${couponTotals.code} (${couponTotals.percent}% OFF):* -${pricePrefix}${couponTotals.discount.toLocaleString("es-AR")}\n`;
-      message += `*TOTAL CON DESCUENTO:* ${pricePrefix}${couponTotals.total.toLocaleString("es-AR")}\n\n`;
+      message += `*Cupón ${activeCouponTotals.code} (${activeCouponTotals.percent}% OFF):* -${pricePrefix}${activeCouponTotals.discount.toLocaleString("es-AR")}\n`;
+      message += `*TOTAL CON DESCUENTO:* ${pricePrefix}${activeCouponTotals.total.toLocaleString("es-AR")}\n\n`;
     } else {
       message += `*TOTAL:* ${pricePrefix}${total.toLocaleString("es-AR")}\n\n`;
     }
@@ -379,6 +380,26 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
     setCustomerData(prev => ({ ...prev, payment: method }));
   };
 
+  const resolveCouponForOrder = async () => {
+    if (couponTotals) return couponTotals;
+
+    const code = normalizeCouponCode(couponCode || customerData.coupon);
+    if (!code) return null;
+
+    const result = await validateCoupon({ code, subtotal: total, items: buildCouponItems() });
+    if (!result.valid) {
+      setAppliedCoupon(null);
+      setCouponStatus({ type: "error", message: result.error || "Cupón inválido o inactivo" });
+      throw new Error(result.error || "Cupón inválido o inactivo");
+    }
+
+    setCouponCode(result.code);
+    setAppliedCoupon(result);
+    setCustomerData(prev => ({ ...prev, coupon: result.code }));
+    setCouponStatus({ type: "success", message: "Cupón aplicado" });
+    return result;
+  };
+
 
   const sendOrder = async () => {
     if (sendingOrder) return;
@@ -393,14 +414,24 @@ export default function Cart({ isOpen: controlledOpen, onClose: controlledOnClos
       return;
     }
 
+    let orderCouponTotals = null;
+    try {
+      orderCouponTotals = await resolveCouponForOrder();
+    } catch (error) {
+      alert(`No se pudo aplicar el cupón: ${error.message}`);
+      return;
+    }
+
+    const orderFinalTotal = orderCouponTotals ? orderCouponTotals.total : Math.round(total);
+
     localStorage.setItem("customerData", JSON.stringify({
       ...customerData,
-      coupon: couponTotals?.code || ""
+      coupon: orderCouponTotals?.code || ""
     }));
 
     const phone = "5493765031782"; // ⚠️ CAMBIAR POR EL NÚMERO DEL VENDEDOR
 
-    const orderText = buildWhatsAppMessage();
+    const orderText = buildWhatsAppMessage(orderCouponTotals);
 
     const extraData = `
 Datos del cliente:
@@ -409,7 +440,7 @@ Nombre: ${customerData.name}
 Teléfono: ${customerData.phone}
 Localidad / Zona: ${customerData.zone}
 Pago: ${customerData.payment}
-${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}% OFF)` : ""}
+${orderCouponTotals ? `Cupón aplicado: ${orderCouponTotals.code} (${orderCouponTotals.percent}% OFF)` : ""}
 
 `;
 
@@ -446,7 +477,7 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
       window.gtag("event", "solicito_pedido_whatsapp", {
         cliente: customerData.name || "sin_nombre",
         cantidad_productos: store.cart.length,
-        total: finalTotal
+        total: orderFinalTotal
       });
     }
 
@@ -484,9 +515,9 @@ ${couponTotals ? `Cupón aplicado: ${couponTotals.code} (${couponTotals.percent}
         },
         payment_method: customerData.payment,
         order_items: orderItems,
-        total_amount: finalTotal,
-        coupon_code: couponTotals?.code || null,
-        billing_address: couponTotals ? { coupon: couponTotals } : {},
+        total_amount: orderFinalTotal,
+        coupon_code: orderCouponTotals?.code || null,
+        billing_address: orderCouponTotals ? { coupon: orderCouponTotals } : {},
         status: "pendiente"
       })
     });

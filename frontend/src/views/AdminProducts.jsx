@@ -6,6 +6,17 @@ import { formatPrice } from "../utils/price.js";
 import AdminBudgetToolbar from "../components/admin/AdminBudgetToolbar.jsx";
 import AdminBudgetSelectionCell from "../components/admin/AdminBudgetSelectionCell.jsx";
 import AdminBudgetModal from "../components/admin/AdminBudgetModal.jsx";
+import AdminPriceAdjustmentModal from "../components/admin/AdminPriceAdjustmentModal.jsx";
+import AdminPriceAdjustmentReviewBar from "../components/admin/AdminPriceAdjustmentReviewBar.jsx";
+import { storeConfig } from "../config/storeConfig.js";
+import {
+    applyAdminPriceAdjustment,
+    confirmAdminPriceAdjustment,
+    deleteAdminPriceAdjustmentHistoryItem,
+    getAdminPriceAdjustment,
+    getAdminPriceAdjustmentHistory,
+    undoAdminPriceAdjustment,
+} from "../utils/adminPriceAdjustmentApi.js";
 import {
     getBestSellerProductIds,
     isBestSellerProduct,
@@ -23,6 +34,14 @@ import {
     productBelongsToCategory,
 } from "../utils/perfumeCategories.js";
 
+
+const PERFUME_CATEGORY_TREE = PERFUME_CATEGORY_DEFINITIONS
+    .filter((category) => Number(category.id) > 0)
+    .map((category) => ({
+        ...category,
+        children: [],
+        level: 0,
+    }));
 
 
 
@@ -468,6 +487,10 @@ export default function AdminProducts() {
     const [savingProduct, setSavingProduct] = useState(false);
     const [hidingProductId, setHidingProductId] = useState(null);
     const [productToHide, setProductToHide] = useState(null);
+    const [priceAdjustmentModalOpen, setPriceAdjustmentModalOpen] = useState(false);
+    const [pendingPriceAdjustment, setPendingPriceAdjustment] = useState(null);
+    const [priceAdjustmentHistory, setPriceAdjustmentHistory] = useState([]);
+    const [priceAdjustmentBusy, setPriceAdjustmentBusy] = useState(false);
 
 
 
@@ -488,6 +511,7 @@ export default function AdminProducts() {
     })
 
     const token = localStorage.getItem("token") || localStorage.getItem("admin_token")
+    const priceAdjustmentEnabled = storeConfig.features?.priceAdjustment === true;
     if (!token) return <div className="p-6">No autorizado</div>
 
     const scrollToResults = () => {
@@ -528,6 +552,102 @@ export default function AdminProducts() {
             console.error("Error fetching products:", error)
         }
     }
+
+    const fetchPriceAdjustment = async () => {
+        if (!priceAdjustmentEnabled) return;
+        try {
+            const [pendingData, historyData] = await Promise.all([
+                getAdminPriceAdjustment(API, token),
+                getAdminPriceAdjustmentHistory(API, token),
+            ]);
+            setPendingPriceAdjustment(pendingData?.pending ? pendingData.adjustment : null);
+            setPriceAdjustmentHistory(historyData?.history || []);
+        } catch (error) {
+            console.error("Error fetching price adjustment:", error);
+        }
+    };
+
+    const applyPriceAdjustment = async (payload) => {
+        if (!priceAdjustmentEnabled) return;
+        setPriceAdjustmentBusy(true);
+        try {
+            const data = await applyAdminPriceAdjustment(API, token, payload);
+            setPendingPriceAdjustment(data?.adjustment || null);
+            setPriceAdjustmentHistory(data?.history || []);
+            setPriceAdjustmentModalOpen(false);
+            await fetchAll();
+            scrollToResults?.();
+        } catch (error) {
+            console.error(error);
+            alert(error?.message || "No se pudo aplicar el ajuste de precios.");
+        } finally {
+            setPriceAdjustmentBusy(false);
+        }
+    };
+
+    const confirmPriceAdjustment = async () => {
+        if (!priceAdjustmentEnabled) return;
+        setPriceAdjustmentBusy(true);
+        try {
+            const data = await confirmAdminPriceAdjustment(API, token);
+            setPendingPriceAdjustment(null);
+            setPriceAdjustmentHistory(data?.history || []);
+        } catch (error) {
+            console.error(error);
+            alert(error?.message || "No se pudo confirmar el ajuste.");
+        } finally {
+            setPriceAdjustmentBusy(false);
+        }
+    };
+
+    const undoPriceAdjustment = async () => {
+        if (!priceAdjustmentEnabled) return;
+        setPriceAdjustmentBusy(true);
+        try {
+            const data = await undoAdminPriceAdjustment(API, token);
+            setPendingPriceAdjustment(null);
+            setPriceAdjustmentHistory(data?.history || []);
+            await fetchAll();
+            scrollToResults?.();
+        } catch (error) {
+            console.error(error);
+            alert(error?.message || "No se pudo deshacer el ajuste.");
+        } finally {
+            setPriceAdjustmentBusy(false);
+        }
+    };
+
+    const undoPriceAdjustmentFromHistory = async (adjustmentId) => {
+        if (!priceAdjustmentEnabled) return;
+        setPriceAdjustmentBusy(true);
+        try {
+            const data = await undoAdminPriceAdjustment(API, token, adjustmentId);
+            setPendingPriceAdjustment(null);
+            setPriceAdjustmentHistory(data?.history || []);
+            await fetchAll();
+            scrollToResults?.();
+        } catch (error) {
+            console.error(error);
+            alert(error?.message || "No se pudo deshacer el ajuste.");
+        } finally {
+            setPriceAdjustmentBusy(false);
+        }
+    };
+
+    const deletePriceAdjustmentHistoryItem = async (adjustmentId) => {
+        if (!priceAdjustmentEnabled) return;
+        setPriceAdjustmentBusy(true);
+        try {
+            const data = await deleteAdminPriceAdjustmentHistoryItem(API, token, adjustmentId);
+            setPriceAdjustmentHistory(data?.history || []);
+            await fetchPriceAdjustment();
+        } catch (error) {
+            console.error(error);
+            alert(error?.message || "No se pudo eliminar el ajuste del historial.");
+        } finally {
+            setPriceAdjustmentBusy(false);
+        }
+    };
 
     const hideProduct = async (product) => {
         setHidingProductId(product.id);
@@ -629,6 +749,7 @@ export default function AdminProducts() {
 
     useEffect(() => {
         fetchAll()
+        fetchPriceAdjustment()
     }, [])
 
     const startEditPrice = (p, currentPrice) => {
@@ -1468,6 +1589,15 @@ export default function AdminProducts() {
                         setBudgetModalOpen(false);
                     }}
                 />
+                {priceAdjustmentEnabled && (
+                    <button
+                        type="button"
+                        onClick={() => setPriceAdjustmentModalOpen(true)}
+                        className="w-full bg-slate-900 text-white px-4 py-2 rounded hover:bg-slate-800 sm:w-auto"
+                    >
+                        Precios
+                    </button>
+                )}
                 <button
                     onClick={() => setForm({
                         category_id: "",
@@ -1577,6 +1707,15 @@ export default function AdminProducts() {
                     }}
                 />
             </div>
+
+            {priceAdjustmentEnabled && (
+                <AdminPriceAdjustmentReviewBar
+                    adjustment={pendingPriceAdjustment}
+                    busy={priceAdjustmentBusy}
+                    onConfirm={confirmPriceAdjustment}
+                    onUndo={undoPriceAdjustment}
+                />
+            )}
 
             {hasActiveFilters && (
                 <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2">
@@ -2259,6 +2398,21 @@ export default function AdminProducts() {
                     }));
                 }}
             />
+
+            {priceAdjustmentEnabled && (
+                <AdminPriceAdjustmentModal
+                    open={priceAdjustmentModalOpen}
+                    categories={PERFUME_CATEGORY_TREE}
+                    products={products}
+                    pendingAdjustment={pendingPriceAdjustment}
+                    history={priceAdjustmentHistory}
+                    applying={priceAdjustmentBusy}
+                    onClose={() => setPriceAdjustmentModalOpen(false)}
+                    onApply={applyPriceAdjustment}
+                    onUndoHistoryItem={undoPriceAdjustmentFromHistory}
+                    onDeleteHistoryItem={deletePriceAdjustmentHistoryItem}
+                />
+            )}
 
             {productToHide && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">

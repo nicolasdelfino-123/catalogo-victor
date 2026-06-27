@@ -19,6 +19,8 @@ import os, io, hashlib, uuid
 from app.models import Order, OrderItem  # asegurate que esté arriba también
 from flask import redirect
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy import text
+import json
 
 
 
@@ -27,6 +29,9 @@ admin_bp = Blueprint('admin', __name__)
 MULTI_CATEGORY_META_TYPE = "multi_category_meta"
 ADMIN_HIDDEN_ORDER_KEY = "__admin_hidden"
 ADMIN_HIDDEN_PRODUCT_KEY = "is_active_product"
+ADMIN_SETTINGS_TABLE = "admin_settings"
+PRICE_ADJUSTMENT_ROLLBACK_KEY = "price_adjustment_rollback"
+PRICE_ADJUSTMENT_HISTORY_KEY = "price_adjustment_history"
 
 # Catálogo de categorías esperado por el frontend actual.
 # Mantener IDs estables evita romper FK y filtros ya existentes.
@@ -273,6 +278,176 @@ def _normalize_volume_options(rows):
 
 def _sum_volume_stock(rows):
     return sum(max(0, int(x.get('stock', 0) or 0)) for x in (rows or []))
+
+
+def _ensure_admin_settings_table():
+    db.session.execute(text("""
+        CREATE TABLE IF NOT EXISTS admin_settings (
+            "key" VARCHAR(120) PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """))
+
+
+def _get_admin_setting(key, default=None):
+    _ensure_admin_settings_table()
+    row = db.session.execute(
+        text('SELECT value FROM admin_settings WHERE "key" = :key'),
+        {"key": key},
+    ).fetchone()
+    if not row:
+        return default
+    try:
+        return json.loads(row[0])
+    except Exception:
+        return default
+
+
+def _set_admin_setting(key, value):
+    _ensure_admin_settings_table()
+    serialized = json.dumps(value, ensure_ascii=False)
+    dialect_name = db.session.bind.dialect.name if db.session.bind else ""
+    if dialect_name == "postgresql":
+        db.session.execute(
+            text("""
+                INSERT INTO admin_settings ("key", value)
+                VALUES (:key, :value)
+                ON CONFLICT ("key") DO UPDATE SET value = EXCLUDED.value
+            """),
+            {"key": key, "value": serialized},
+        )
+        return
+
+    existing = db.session.execute(
+        text('SELECT 1 FROM admin_settings WHERE "key" = :key'),
+        {"key": key},
+    ).fetchone()
+    if existing:
+        db.session.execute(
+            text('UPDATE admin_settings SET value = :value WHERE "key" = :key'),
+            {"key": key, "value": serialized},
+        )
+        return
+
+    db.session.execute(
+        text('INSERT INTO admin_settings ("key", value) VALUES (:key, :value)'),
+        {"key": key, "value": serialized},
+    )
+
+
+def _delete_admin_setting(key):
+    _ensure_admin_settings_table()
+    db.session.execute(
+        text('DELETE FROM admin_settings WHERE "key" = :key'),
+        {"key": key},
+    )
+
+
+def _product_category_ids(product):
+    return _extract_multi_category_ids_from_catalog(product.flavor_catalog, product.category_id)
+
+
+def _round_price_without_cents(value, factor):
+    try:
+        parsed = float(value)
+    except Exception:
+        return value
+    if parsed <= 0:
+        return parsed
+    return float(round(parsed * factor))
+
+
+def _adjust_volume_prices_by_scope(volume_options, factor, price_scope):
+    adjusted = []
+    changed = False
+    for row in (volume_options or []):
+        if not isinstance(row, dict):
+            continue
+        next_row = dict(row)
+        if price_scope in ("both", "retail") and next_row.get("price") not in ("", None):
+            next_row["price"] = _round_price_without_cents(next_row.get("price"), factor)
+            changed = True
+        if price_scope in ("both", "wholesale") and next_row.get("price_wholesale") not in ("", None):
+            next_row["price_wholesale"] = _round_price_without_cents(next_row.get("price_wholesale"), factor)
+            changed = True
+        adjusted.append(next_row)
+    return adjusted, changed
+
+
+def _price_scope_label(price_scope):
+    if price_scope == "retail":
+        return "solo minorista"
+    if price_scope == "wholesale":
+        return "solo mayorista"
+    return "minorista y mayorista"
+
+
+def _serialize_price_adjustment(setting):
+    if not isinstance(setting, dict):
+        return None
+    target_type = setting.get("target_type")
+    category_label = setting.get("category_label") or ""
+    brand = setting.get("brand") or ""
+    return {
+        "id": setting.get("id"),
+        "target_type": target_type,
+        "target_label": brand if target_type == "brand" else category_label,
+        "category_ids": setting.get("category_ids") or [],
+        "category_label": category_label,
+        "brand": brand,
+        "price_scope": setting.get("price_scope") or "both",
+        "price_scope_label": _price_scope_label(setting.get("price_scope") or "both"),
+        "percent": setting.get("percent"),
+        "affected_count": setting.get("affected_count") or 0,
+        "created_at": setting.get("created_at"),
+    }
+
+
+def _get_price_adjustment_history():
+    history = _get_admin_setting(PRICE_ADJUSTMENT_HISTORY_KEY, [])
+    return history if isinstance(history, list) else []
+
+
+def _set_price_adjustment_history(history):
+    _set_admin_setting(PRICE_ADJUSTMENT_HISTORY_KEY, history[:50])
+
+
+def _public_price_adjustment_record(record):
+    public = _serialize_price_adjustment(record)
+    if not public:
+        return None
+    public["status"] = record.get("status") or "confirmed"
+    return public
+
+
+def _serialize_price_adjustment_history():
+    return [
+        item
+        for item in (_public_price_adjustment_record(record) for record in _get_price_adjustment_history())
+        if item
+    ]
+
+
+def _restore_price_adjustment_record(record):
+    restored_count = 0
+    for snapshot in (record.get("snapshots") or []):
+        product_id = snapshot.get("id")
+        if not product_id:
+            continue
+        product = Product.query.get(product_id)
+        if not product:
+            continue
+        if "price" in snapshot:
+            product.price = float(snapshot.get("price") or 0)
+        if "price_wholesale" in snapshot:
+            raw_wholesale = snapshot.get("price_wholesale")
+            product.price_wholesale = float(raw_wholesale) if raw_wholesale not in ("", None) else None
+        if "volume_options" in snapshot:
+            product.volume_options = _normalize_volume_options(snapshot.get("volume_options") or [])
+            flag_modified(product, "volume_options")
+        db.session.add(product)
+        restored_count += 1
+    return restored_count
 
 # Middleware para verificar que el usuario sea admin
 def admin_required():
@@ -547,6 +722,235 @@ def get_all_products_admin():
         
     except Exception as e:
         return jsonify({'error': f'Error al obtener productos: {str(e)}'}), 500
+
+
+# =======================
+#   AJUSTE MASIVO PRECIOS
+# =======================
+
+@admin_bp.route('/price-adjustment', methods=['GET'])
+@jwt_required()
+def get_price_adjustment():
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado.'}), 403
+    try:
+        pending = _get_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY)
+        return jsonify({
+            "pending": bool(pending),
+            "adjustment": _serialize_price_adjustment(pending) if pending else None,
+        }), 200
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener ajuste de precios: {str(e)}'}), 500
+
+
+@admin_bp.route('/price-adjustment/history', methods=['GET'])
+@jwt_required()
+def get_price_adjustment_history():
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado.'}), 403
+    try:
+        return jsonify({"history": _serialize_price_adjustment_history()}), 200
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener historial de precios: {str(e)}'}), 500
+
+
+@admin_bp.route('/price-adjustment/apply', methods=['POST'])
+@jwt_required()
+def apply_price_adjustment():
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado.'}), 403
+
+    try:
+        if _get_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY):
+            return jsonify({'error': 'Ya hay un ajuste pendiente. Confirmalo o deshacelo antes de aplicar otro.'}), 400
+
+        data = request.get_json() or {}
+        target_type = (data.get("target_type") or "").strip().lower()
+        price_scope = (data.get("price_scope") or "both").strip().lower()
+
+        try:
+            percent = float(data.get("percent"))
+        except Exception:
+            percent = 0
+
+        if percent == 0 or percent <= -100 or percent > 1000:
+            return jsonify({'error': 'El porcentaje debe ser distinto de 0, mayor a -100 y menor o igual a 1000.'}), 400
+        if target_type not in ("category", "brand"):
+            return jsonify({'error': 'El destino debe ser categoría o marca.'}), 400
+        if price_scope not in ("both", "retail", "wholesale"):
+            return jsonify({'error': 'El alcance de precios es inválido.'}), 400
+
+        products = []
+        category_ids = []
+        category_label = ""
+        brand = ""
+
+        if target_type == "brand":
+            brand = str(data.get("brand") or "").strip()
+            if not brand:
+                return jsonify({'error': 'Falta la marca.'}), 400
+            products = Product.query.filter(Product.brand == brand).all()
+        else:
+            category_ids = _normalize_category_ids(data.get("category_ids") or [])
+            category_label = str(data.get("category_label") or "").strip()
+            if not category_ids:
+                return jsonify({'error': 'Falta al menos una categoría válida.'}), 400
+            category_id_set = set(category_ids)
+            products = [
+                product
+                for product in Product.query.all()
+                if category_id_set.intersection(_product_category_ids(product))
+            ]
+
+        products = [product for product in products if not _is_product_hidden_from_admin(product)]
+        if not products:
+            return jsonify({'error': 'No hay productos para ajustar con esa selección.'}), 400
+
+        factor = 1 + (percent / 100)
+        snapshots = []
+
+        for product in products:
+            snapshots.append({
+                "id": product.id,
+                "price": float(product.price or 0),
+                "price_wholesale": float(product.price_wholesale) if product.price_wholesale is not None else None,
+                "volume_options": json.loads(json.dumps(product.volume_options or [], ensure_ascii=False)),
+            })
+
+            if price_scope in ("both", "retail"):
+                product.price = _round_price_without_cents(product.price, factor)
+            if price_scope in ("both", "wholesale") and product.price_wholesale is not None:
+                product.price_wholesale = _round_price_without_cents(product.price_wholesale, factor)
+
+            next_volume_options, volume_changed = _adjust_volume_prices_by_scope(
+                product.volume_options or [],
+                factor,
+                price_scope,
+            )
+            if volume_changed:
+                product.volume_options = _normalize_volume_options(next_volume_options)
+                flag_modified(product, "volume_options")
+
+            db.session.add(product)
+
+        now = now_cba_naive()
+        adjustment = {
+            "id": uuid.uuid4().hex,
+            "target_type": target_type,
+            "category_ids": category_ids,
+            "category_label": category_label,
+            "brand": brand,
+            "price_scope": price_scope,
+            "percent": percent,
+            "affected_count": len(products),
+            "created_at": now.isoformat(),
+            "status": "pending",
+            "snapshots": snapshots,
+        }
+
+        _set_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY, adjustment)
+        history = _get_price_adjustment_history()
+        history.insert(0, adjustment)
+        _set_price_adjustment_history(history)
+
+        db.session.commit()
+        return jsonify({
+            "adjustment": _serialize_price_adjustment(adjustment),
+            "history": _serialize_price_adjustment_history(),
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al aplicar ajuste de precios: {str(e)}'}), 500
+
+
+@admin_bp.route('/price-adjustment/confirm', methods=['POST'])
+@jwt_required()
+def confirm_price_adjustment():
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado.'}), 403
+
+    try:
+        pending = _get_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY)
+        if not pending:
+            return jsonify({'error': 'No hay un ajuste pendiente para confirmar.'}), 400
+
+        history = _get_price_adjustment_history()
+        for item in history:
+            if item.get("id") == pending.get("id"):
+                item["status"] = "confirmed"
+                break
+        _set_price_adjustment_history(history)
+        _delete_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY)
+        db.session.commit()
+        return jsonify({"history": _serialize_price_adjustment_history()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al confirmar ajuste de precios: {str(e)}'}), 500
+
+
+@admin_bp.route('/price-adjustment/undo', methods=['POST'])
+@jwt_required()
+def undo_price_adjustment():
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado.'}), 403
+
+    try:
+        data = request.get_json() or {}
+        requested_id = data.get("id")
+        pending = _get_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY)
+        history = _get_price_adjustment_history()
+
+        record = None
+        if requested_id:
+            record = next((item for item in history if item.get("id") == requested_id), None)
+        else:
+            record = pending
+
+        if not record:
+            return jsonify({'error': 'No se encontró el ajuste para deshacer.'}), 404
+        if record.get("status") == "undone":
+            return jsonify({'error': 'Ese ajuste ya fue deshecho.'}), 400
+
+        _restore_price_adjustment_record(record)
+
+        for item in history:
+            if item.get("id") == record.get("id"):
+                item["status"] = "undone"
+                break
+
+        if pending and pending.get("id") == record.get("id"):
+            _delete_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY)
+
+        _set_price_adjustment_history(history)
+        db.session.commit()
+        return jsonify({"history": _serialize_price_adjustment_history()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al deshacer ajuste de precios: {str(e)}'}), 500
+
+
+@admin_bp.route('/price-adjustment/history/<adjustment_id>', methods=['DELETE'])
+@jwt_required()
+def delete_price_adjustment_history_item(adjustment_id):
+    if not admin_required():
+        return jsonify({'error': 'Acceso denegado.'}), 403
+
+    try:
+        pending = _get_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY)
+        if pending and pending.get("id") == adjustment_id:
+            _delete_admin_setting(PRICE_ADJUSTMENT_ROLLBACK_KEY)
+
+        history = [
+            item
+            for item in _get_price_adjustment_history()
+            if item.get("id") != adjustment_id
+        ]
+        _set_price_adjustment_history(history)
+        db.session.commit()
+        return jsonify({"history": _serialize_price_adjustment_history()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al eliminar historial de precios: {str(e)}'}), 500
 
 
 # =======================

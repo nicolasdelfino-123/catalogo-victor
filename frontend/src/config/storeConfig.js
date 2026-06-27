@@ -38,6 +38,10 @@ export const storeConfig = {
 
     },
 
+    features: {
+        priceAdjustment: true,
+    },
+
     map: {
         embed: "https://www.google.com/maps?q=-31.8704952,-62.7228966&z=17&hl=es&output=embed",
     }

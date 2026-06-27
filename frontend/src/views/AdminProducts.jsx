@@ -1269,46 +1269,55 @@ export default function AdminProducts() {
 
     const selectedBudgetCount = selectedBudgetItems.length;
 
-    const filtered = products.filter((p) => {
-        const matchesSearch =
-            !q ||
-            p.name?.toLowerCase().includes(q.toLowerCase()) ||
-            p.brand?.toLowerCase().includes(q.toLowerCase());
+    const filtered = products
+        .filter((p) => {
+            const matchesSearch =
+                !q ||
+                p.name?.toLowerCase().includes(q.toLowerCase()) ||
+                p.brand?.toLowerCase().includes(q.toLowerCase());
 
-        const matchesCategory =
-            selectedCategory === "Todos" ||
-            (normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Inicio")
-                ? isHomeFeaturedProduct(p)
-                : normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Más Vendidos")
-                ? isBestSellerProduct(p, bestSellerIds)
-                : (() => {
-                    const selectedCategoryId = mapCategoryIdFromName(selectedCategory);
-                    if (Number.isFinite(Number(selectedCategoryId)) && Number(selectedCategoryId) > 0) {
-                        return productBelongsToCategory(p, selectedCategoryId);
-                    }
-                    return getDisplayCategoryNames(p).some(
-                        (categoryName) => normalizeCategoryLabel(categoryName) === normalizeCategoryLabel(selectedCategory)
-                    );
-                })());
+            const matchesCategory =
+                selectedCategory === "Todos" ||
+                (normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Inicio")
+                    ? isHomeFeaturedProduct(p)
+                    : normalizeCategoryLabel(selectedCategory) === normalizeCategoryLabel("Más Vendidos")
+                    ? isBestSellerProduct(p, bestSellerIds)
+                    : (() => {
+                        const selectedCategoryId = mapCategoryIdFromName(selectedCategory);
+                        if (Number.isFinite(Number(selectedCategoryId)) && Number(selectedCategoryId) > 0) {
+                            return productBelongsToCategory(p, selectedCategoryId);
+                        }
+                        return getDisplayCategoryNames(p).some(
+                            (categoryName) => normalizeCategoryLabel(categoryName) === normalizeCategoryLabel(selectedCategory)
+                        );
+                    })());
 
-        const isActive = Boolean(p?.is_active);
-        const matchesStatus =
-            selectedStatus === "todos" ||
-            (selectedStatus === "activos" && isActive) ||
-            (selectedStatus === "inactivos" && !isActive);
+            const isActive = Boolean(p?.is_active);
+            const matchesStatus =
+                selectedStatus === "todos" ||
+                (selectedStatus === "activos" && isActive) ||
+                (selectedStatus === "inactivos" && !isActive);
 
-        const productStock = Number.isFinite(Number(p?.stock)) ? Number(p.stock) : 0;
-        const matchesStock =
-            selectedStockFilter === "todos" ||
-            (selectedStockFilter === "sin_stock" && productStock === 0) ||
-            (selectedStockFilter === "stock_bajo" && productStock > 0 && productStock <= 5);
-        const matchesBudget =
-            !budgetMode ||
-            budgetFilter !== "selected" ||
-            getBudgetSelection(p.id).checked;
+            const productStock = Number.isFinite(Number(p?.stock)) ? Number(p.stock) : 0;
+            const matchesStock =
+                selectedStockFilter === "todos" ||
+                (selectedStockFilter === "sin_stock" && productStock === 0) ||
+                (selectedStockFilter === "stock_bajo" && productStock > 0 && productStock <= 5);
+            const matchesBudget =
+                !budgetMode ||
+                budgetFilter !== "selected" ||
+                getBudgetSelection(p.id).checked;
 
-        return matchesSearch && matchesCategory && matchesStatus && matchesStock && matchesBudget;
-    });
+            return matchesSearch && matchesCategory && matchesStatus && matchesStock && matchesBudget;
+        })
+        .sort((a, b) => {
+            const byName = String(a?.name || "").localeCompare(String(b?.name || ""), "es", {
+                sensitivity: "base",
+                numeric: true,
+            });
+            if (byName !== 0) return byName;
+            return Number(a?.id || 0) - Number(b?.id || 0);
+        });
 
     const activeFilters = [
         q.trim()
